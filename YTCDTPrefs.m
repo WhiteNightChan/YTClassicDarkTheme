@@ -68,7 +68,3 @@ void YTCDTClearCustomThemeColor(void) {
     [YTCDTDefaults() removeObjectForKey:kYTCDTCustomColorKey];
     [YTCDTDefaults() synchronize];
 }
-
-void YTCDTSynchronize(void) {
-    [YTCDTDefaults() synchronize];
-}

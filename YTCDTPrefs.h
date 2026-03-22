@@ -17,4 +17,3 @@ void YTCDTSetThemeMode(YTCDTThemeMode mode);
 void YTCDTSetOLEDKeyboardEnabled(BOOL enabled);
 void YTCDTSetCustomThemeColor(UIColor *color);
 void YTCDTClearCustomThemeColor(void);
-void YTCDTSynchronize(void);

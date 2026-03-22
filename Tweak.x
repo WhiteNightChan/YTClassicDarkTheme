@@ -368,9 +368,9 @@ static inline UIColor *activeSecondaryThemeColor() {
     }
     if ([identifier isEqualToString:@"id.ui.comment_cell"]) {
         self.backgroundColor = activeThemeColor();
-    }
-    if ([identifier isEqualToString:@"id.ui.comment_cell"] && self.superview) {
-        self.superview.backgroundColor = activeThemeColor();
+        if (self.superview) {
+            self.superview.backgroundColor = activeThemeColor();
+        }
     }
     if ([identifier isEqualToString:@"id.ui.comment_thread"]) {
         self.backgroundColor = activeThemeColor();
