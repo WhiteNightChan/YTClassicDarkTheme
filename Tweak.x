@@ -1,19 +1,22 @@
 #import "Tweak.h"
+#import "YTCDTPrefs.h"
 
-static NSInteger cachedThemeMode = 0;
+static YTCDTThemeMode cachedThemeMode = YTCDTThemeModeOff;
 static BOOL cachedOLEDKeyboardEnabled = NO;
 static UIColor *customThemeColor = nil;
 
 static inline BOOL isThemeEnabled() {
-    return cachedThemeMode == 1 || cachedThemeMode == 2 || cachedThemeMode == 3;
+    return cachedThemeMode == YTCDTThemeModeClassicGray ||
+           cachedThemeMode == YTCDTThemeModeOLED ||
+           cachedThemeMode == YTCDTThemeModeCustom;
 }
 
 static inline BOOL isOLEDThemeEnabled() {
-    return cachedThemeMode == 2;
+    return cachedThemeMode == YTCDTThemeModeOLED;
 }
 
 static inline BOOL isCustomThemeEnabled() {
-    return cachedThemeMode == 3 && customThemeColor != nil;
+    return cachedThemeMode == YTCDTThemeModeCustom && customThemeColor != nil;
 }
 
 static inline UIColor *oldDarkThemeColor() {
@@ -366,6 +369,9 @@ static inline UIColor *activeSecondaryThemeColor() {
     if ([identifier isEqualToString:@"id.ui.comment_cell"]) {
         self.backgroundColor = activeThemeColor();
     }
+    if ([identifier isEqualToString:@"id.ui.comment_cell"] && self.superview) {
+        self.superview.backgroundColor = activeThemeColor();
+    }
     if ([identifier isEqualToString:@"id.ui.comment_thread"]) {
         self.backgroundColor = activeThemeColor();
     }
@@ -482,23 +488,13 @@ static inline UIColor *activeSecondaryThemeColor() {
 %end
 
 %ctor {
-    cachedThemeMode = [[NSUserDefaults standardUserDefaults] integerForKey:@"classicDarkTheme_mode"];
-    cachedOLEDKeyboardEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"classicDarkTheme_oledKeyboard"];
+    cachedThemeMode = YTCDTThemeModeValue();
+    cachedOLEDKeyboardEnabled = YTCDTOLEDKeyboardEnabled();
+    customThemeColor = YTCDTCustomThemeColor();
 
-    if (cachedThemeMode == 3) {
-        NSData *colorData = [[NSUserDefaults standardUserDefaults] objectForKey:@"classicDarkTheme_customColor"];
-        if (colorData) {
-            NSError *error = nil;
-            NSKeyedUnarchiver *unarchiver =
-                [[NSKeyedUnarchiver alloc] initForReadingFromData:colorData error:&error];
-            if (!error) {
-                [unarchiver setRequiresSecureCoding:NO];
-                customThemeColor = [unarchiver decodeObjectForKey:NSKeyedArchiveRootObjectKey];
-            }
-        }
-    }
-
-    if (cachedThemeMode == 1 || cachedThemeMode == 2 || (cachedThemeMode == 3 && customThemeColor != nil)) {
+    if (cachedThemeMode == YTCDTThemeModeClassicGray ||
+        cachedThemeMode == YTCDTThemeModeOLED ||
+        (cachedThemeMode == YTCDTThemeModeCustom && customThemeColor != nil)) {
         %init(gClassicDarkTheme);
     }
 

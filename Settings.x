@@ -5,12 +5,9 @@
 #import <YouTubeHeader/YTSettingsSectionItem.h>
 #import <YouTubeHeader/YTSettingsSectionItemManager.h>
 #import <YouTubeHeader/YTSettingsViewController.h>
+#import "YTCDTPrefs.h"
 
 static const NSInteger YTClassicDarkThemeSection = 2901;
-
-static NSString * const kThemeModeKey = @"classicDarkTheme_mode";
-static NSString * const kOLEDKeyboardKey = @"classicDarkTheme_oledKeyboard";
-static NSString * const kCustomColorKey = @"classicDarkTheme_customColor";
 
 @interface NSObject (YTClassicDarkThemeSettings)
 - (void)reloadData;
@@ -21,26 +18,14 @@ static NSString * const kCustomColorKey = @"classicDarkTheme_customColor";
 - (void)updateYTClassicDarkThemeSectionWithEntry:(id)entry;
 @end
 
-static inline NSInteger ThemeMode(void) {
-    return [[NSUserDefaults standardUserDefaults] integerForKey:kThemeModeKey];
-}
-
-static inline BOOL OLEDKeyboardEnabled(void) {
-    return [[NSUserDefaults standardUserDefaults] boolForKey:kOLEDKeyboardKey];
-}
-
-static inline BOOL HasSavedCustomColor(void) {
-    return [[NSUserDefaults standardUserDefaults] objectForKey:kCustomColorKey] != nil;
-}
-
 static inline NSString *ThemeModeLabel(void) {
-    switch (ThemeMode()) {
-        case 1:
+    switch (YTCDTThemeModeValue()) {
+        case YTCDTThemeModeClassicGray:
             return @"Classic Gray";
-        case 2:
+        case YTCDTThemeModeOLED:
             return @"OLED";
-        case 3:
-            return HasSavedCustomColor() ? @"Custom" : @"Custom (No Color Saved)";
+        case YTCDTThemeModeCustom:
+            return YTCDTHasCustomThemeColor() ? @"Custom" : @"Custom (No Color Saved)";
         default:
             return @"Off";
     }
@@ -50,17 +35,23 @@ static inline NSString *ThemeModeLabel(void) {
 
 + (NSArray <NSNumber *> *)settingsCategoryOrder {
     NSArray <NSNumber *> *order = %orig;
-    NSUInteger insertIndex = [order indexOfObject:@(1)];
-
-    if (insertIndex != NSNotFound) {
-        NSMutableArray <NSNumber *> *mutableOrder = order.mutableCopy;
-        if (![mutableOrder containsObject:@(YTClassicDarkThemeSection)]) {
-            [mutableOrder insertObject:@(YTClassicDarkThemeSection) atIndex:insertIndex + 1];
-        }
-        order = mutableOrder.copy;
+    if (!order) {
+        return @[@(YTClassicDarkThemeSection)];
     }
 
-    return order;
+    NSMutableArray <NSNumber *> *mutableOrder = order.mutableCopy;
+    if ([mutableOrder containsObject:@(YTClassicDarkThemeSection)]) {
+        return mutableOrder.copy;
+    }
+
+    NSUInteger insertIndex = [order indexOfObject:@(1)];
+    if (insertIndex != NSNotFound) {
+        [mutableOrder insertObject:@(YTClassicDarkThemeSection) atIndex:insertIndex + 1];
+    } else {
+        [mutableOrder addObject:@(YTClassicDarkThemeSection)];
+    }
+
+    return mutableOrder.copy;
 }
 
 %end
@@ -72,7 +63,8 @@ static inline NSString *ThemeModeLabel(void) {
         return %orig;
     }
 
-    NSMutableArray *mutableCategories = %orig.mutableCopy;
+    NSArray *original = %orig;
+    NSMutableArray *mutableCategories = original ? original.mutableCopy : [NSMutableArray array];
     if (![mutableCategories containsObject:@(YTClassicDarkThemeSection)]) {
         [mutableCategories insertObject:@(YTClassicDarkThemeSection) atIndex:0];
     }
@@ -122,7 +114,7 @@ static inline NSString *ThemeModeLabel(void) {
                                              @"Disable the theme",
                                              @"Restore the classic gray dark theme",
                                              @"Use pure black OLED dark mode",
-                                             HasSavedCustomColor() ? @"Use saved custom color" : @"No custom color saved yet"
+                                             YTCDTHasCustomThemeColor() ? @"Use saved custom color" : @"No custom color saved yet"
                                          ];
 
                                          NSMutableArray *rows = [NSMutableArray array];
@@ -135,12 +127,11 @@ static inline NSString *ThemeModeLabel(void) {
                                                  [%c(YTSettingsSectionItem) checkmarkItemWithTitle:title
                                                                                  titleDescription:desc
                                                                                       selectBlock:^BOOL (YTSettingsCell *pickerCell, NSUInteger arg2) {
-                                                                                          if (i == 3 && !HasSavedCustomColor()) {
+                                                                                          if (i == YTCDTThemeModeCustom && !YTCDTHasCustomThemeColor()) {
                                                                                               return YES;
                                                                                           }
 
-                                                                                          [[NSUserDefaults standardUserDefaults] setInteger:(NSInteger)i forKey:kThemeModeKey];
-                                                                                          [[NSUserDefaults standardUserDefaults] synchronize];
+                                                                                          YTCDTSetThemeMode((YTCDTThemeMode)i);
 
                                                                                           if ([delegate respondsToSelector:@selector(reloadData)]) {
                                                                                               [delegate reloadData];
@@ -156,7 +147,7 @@ static inline NSString *ThemeModeLabel(void) {
                                                  initWithNavTitle:@"Classic Dark Theme"
                                                  pickerSectionTitle:@"Mode"
                                                  rows:rows
-                                                 selectedItemIndex:ThemeMode()
+                                                 selectedItemIndex:YTCDTThemeModeValue()
                                                  parentResponder:delegate];
 
                                          [delegate pushViewController:picker];
@@ -168,10 +159,9 @@ static inline NSString *ThemeModeLabel(void) {
         [%c(YTSettingsSectionItem) switchItemWithTitle:@"OLED Keyboard"
                                       titleDescription:@"Restart YouTube after changing keyboard setting"
                                accessibilityIdentifier:@"YTClassicDarkThemeOLEDKeyboard"
-                                             switchOn:OLEDKeyboardEnabled()
+                                             switchOn:YTCDTOLEDKeyboardEnabled()
                                           switchBlock:^BOOL (YTSettingsCell *cell, BOOL enabled) {
-                                              [[NSUserDefaults standardUserDefaults] setBool:enabled forKey:kOLEDKeyboardKey];
-                                              [[NSUserDefaults standardUserDefaults] synchronize];
+                                              YTCDTSetOLEDKeyboardEnabled(enabled);
 
                                               if ([delegate respondsToSelector:@selector(reloadData)]) {
                                                   [delegate reloadData];
@@ -187,7 +177,7 @@ static inline NSString *ThemeModeLabel(void) {
                                 titleDescription:@"Color picker can be added later"
                          accessibilityIdentifier:@"YTClassicDarkThemeCustomColor"
                                  detailTextBlock:^NSString *{
-                                     return HasSavedCustomColor() ? @"Saved" : @"Not Set";
+                                     return YTCDTHasCustomThemeColor() ? @"Saved" : @"Not Set";
                                  }
                                      selectBlock:nil];
     customColorStatus.enabled = NO;
