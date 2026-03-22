@@ -31,15 +31,103 @@ static inline NSString *ThemeModeLabel(void) {
     }
 }
 
+static inline NSArray<NSString *> *YTCDTCustomColorTitles(void) {
+    return @[
+        @"Slate Gray",
+        @"Warm Gray",
+        @"Midnight Blue",
+        @"Deep Purple",
+        @"Olive Dark",
+        @"Charcoal"
+    ];
+}
+
+static inline NSArray<UIColor *> *YTCDTCustomColorValues(void) {
+    return @[
+        [UIColor colorWithRed:0.23 green:0.26 blue:0.30 alpha:1.0], // Slate Gray
+        [UIColor colorWithRed:0.24 green:0.22 blue:0.20 alpha:1.0], // Warm Gray
+        [UIColor colorWithRed:0.10 green:0.12 blue:0.20 alpha:1.0], // Midnight Blue
+        [UIColor colorWithRed:0.18 green:0.12 blue:0.24 alpha:1.0], // Deep Purple
+        [UIColor colorWithRed:0.20 green:0.22 blue:0.14 alpha:1.0], // Olive Dark
+        [UIColor colorWithRed:0.16 green:0.16 blue:0.16 alpha:1.0], // Charcoal
+    ];
+}
+
+static inline BOOL YTCDTColorComponents(UIColor *color, CGFloat *r, CGFloat *g, CGFloat *b, CGFloat *a) {
+    if (!color) {
+        return NO;
+    }
+
+    UIColor *converted = color;
+    if (![converted getRed:r green:g blue:b alpha:a]) {
+        CGFloat white = 0.0;
+        if ([converted getWhite:&white alpha:a]) {
+            *r = white;
+            *g = white;
+            *b = white;
+            return YES;
+        }
+        return NO;
+    }
+    return YES;
+}
+
+static inline BOOL YTCDTColorsAreClose(UIColor *lhs, UIColor *rhs) {
+    CGFloat lr = 0.0, lg = 0.0, lb = 0.0, la = 0.0;
+    CGFloat rr = 0.0, rg = 0.0, rb = 0.0, ra = 0.0;
+
+    if (!YTCDTColorComponents(lhs, &lr, &lg, &lb, &la) ||
+        !YTCDTColorComponents(rhs, &rr, &rg, &rb, &ra)) {
+        return NO;
+    }
+
+    CGFloat epsilon = 0.01;
+    return fabs(lr - rr) < epsilon &&
+           fabs(lg - rg) < epsilon &&
+           fabs(lb - rb) < epsilon &&
+           fabs(la - ra) < epsilon;
+}
+
+static inline NSInteger YTCDTSelectedCustomColorIndex(void) {
+    UIColor *currentColor = YTCDTCustomThemeColor();
+    if (!currentColor) {
+        return NSNotFound;
+    }
+
+    NSArray<UIColor *> *presetColors = YTCDTCustomColorValues();
+    for (NSUInteger i = 0; i < presetColors.count; i++) {
+        if (YTCDTColorsAreClose(currentColor, presetColors[i])) {
+            return (NSInteger)i;
+        }
+    }
+
+    return NSNotFound;
+}
+
+static inline NSString *CustomColorStatusLabel(void) {
+    if (!YTCDTHasCustomThemeColor()) {
+        return @"None";
+    }
+
+    NSInteger selectedIndex = YTCDTSelectedCustomColorIndex();
+    NSArray<NSString *> *titles = YTCDTCustomColorTitles();
+
+    if (selectedIndex != NSNotFound && selectedIndex < (NSInteger)titles.count) {
+        return titles[(NSUInteger)selectedIndex];
+    }
+
+    return @"Saved";
+}
+
 %hook YTAppSettingsPresentationData
 
-+ (NSArray <NSNumber *> *)settingsCategoryOrder {
-    NSArray <NSNumber *> *order = %orig;
++ (NSArray<NSNumber *> *)settingsCategoryOrder {
+    NSArray<NSNumber *> *order = %orig;
     if (!order) {
         return @[@(YTClassicDarkThemeSection)];
     }
 
-    NSMutableArray <NSNumber *> *mutableOrder = order.mutableCopy;
+    NSMutableArray<NSNumber *> *mutableOrder = order.mutableCopy;
     if ([mutableOrder containsObject:@(YTClassicDarkThemeSection)]) {
         return mutableOrder.copy;
     }
@@ -58,7 +146,7 @@ static inline NSString *ThemeModeLabel(void) {
 
 %hook YTSettingsGroupData
 
-- (NSArray <NSNumber *> *)orderedCategories {
+- (NSArray<NSNumber *> *)orderedCategories {
     if (self.type != 1 || class_getClassMethod(objc_getClass("YTSettingsGroupData"), @selector(tweaks))) {
         return %orig;
     }
@@ -172,16 +260,75 @@ static inline NSString *ThemeModeLabel(void) {
                                         settingItemId:0];
     [sectionItems addObject:keyboardItem];
 
-    YTSettingsSectionItem *customColorStatus =
+    YTSettingsSectionItem *customColorItem =
         [%c(YTSettingsSectionItem) itemWithTitle:@"Custom Color"
-                                titleDescription:@"Color picker can be added later"
+                                titleDescription:@"Selecting a color also sets Mode to Custom"
                          accessibilityIdentifier:@"YTClassicDarkThemeCustomColor"
                                  detailTextBlock:^NSString *{
-                                     return YTCDTHasCustomThemeColor() ? @"Saved" : @"Not Set";
+                                     return CustomColorStatusLabel();
                                  }
-                                     selectBlock:nil];
-    customColorStatus.enabled = NO;
-    [sectionItems addObject:customColorStatus];
+                                     selectBlock:^BOOL (YTSettingsCell *cell, NSUInteger arg1) {
+                                         NSArray<NSString *> *titles = YTCDTCustomColorTitles();
+                                         NSArray<UIColor *> *colors = YTCDTCustomColorValues();
+                                         NSInteger selectedIndex = YTCDTSelectedCustomColorIndex();
+
+                                         NSMutableArray *rows = [NSMutableArray array];
+
+                                         YTSettingsSectionItem *notSetRow =
+                                             [%c(YTSettingsSectionItem) checkmarkItemWithTitle:@"None"
+                                                                             titleDescription:@"Clear custom color and set Mode to Off"
+                                                                                  selectBlock:^BOOL (YTSettingsCell *pickerCell, NSUInteger arg2) {
+                                                                                      YTCDTClearCustomThemeColor();
+
+                                                                                      if (YTCDTThemeModeValue() == YTCDTThemeModeCustom) {
+                                                                                          YTCDTSetThemeMode(YTCDTThemeModeOff);
+                                                                                      }
+
+                                                                                      if ([delegate respondsToSelector:@selector(reloadData)]) {
+                                                                                          [delegate reloadData];
+                                                                                      }
+
+                                                                                      return YES;
+                                                                                  }];
+                                         [rows addObject:notSetRow];
+
+                                         for (NSUInteger i = 0; i < titles.count; i++) {
+                                             NSString *title = titles[i];
+                                             UIColor *color = colors[i];
+
+                                             YTSettingsSectionItem *row =
+                                                 [%c(YTSettingsSectionItem) checkmarkItemWithTitle:title
+                                                                                 titleDescription:@"Apply after restarting YouTube"
+                                                                                      selectBlock:^BOOL (YTSettingsCell *pickerCell, NSUInteger arg2) {
+                                                                                          YTCDTSetCustomThemeColor(color);
+                                                                                          YTCDTSetThemeMode(YTCDTThemeModeCustom);
+
+                                                                                          if ([delegate respondsToSelector:@selector(reloadData)]) {
+                                                                                              [delegate reloadData];
+                                                                                          }
+
+                                                                                          return YES;
+                                                                                      }];
+                                             [rows addObject:row];
+                                         }
+
+                                         NSUInteger pickerSelectedIndex =
+                                             (selectedIndex == NSNotFound)
+                                                 ? (YTCDTHasCustomThemeColor() ? NSNotFound : 0)
+                                                 : (NSUInteger)(selectedIndex + 1);
+
+                                         YTSettingsPickerViewController *picker =
+                                             [[%c(YTSettingsPickerViewController) alloc]
+                                                 initWithNavTitle:@"Classic Dark Theme"
+                                                 pickerSectionTitle:@"Custom Color"
+                                                 rows:rows
+                                                 selectedItemIndex:pickerSelectedIndex
+                                                 parentResponder:delegate];
+
+                                         [delegate pushViewController:picker];
+                                         return YES;
+                                     }];
+    [sectionItems addObject:customColorItem];
 
     if ([delegate respondsToSelector:@selector(setSectionItems:forCategory:title:icon:titleDescription:headerHidden:)]) {
         YTIIcon *icon = [%c(YTIIcon) new];
