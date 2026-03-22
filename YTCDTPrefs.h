@@ -12,8 +12,10 @@ BOOL YTCDTOLEDKeyboardEnabled(void);
 
 BOOL YTCDTHasCustomThemeColor(void);
 UIColor *YTCDTCustomThemeColor(void);
+NSString *YTCDTCustomThemeColorHexString(void);
 
 void YTCDTSetThemeMode(YTCDTThemeMode mode);
 void YTCDTSetOLEDKeyboardEnabled(BOOL enabled);
 void YTCDTSetCustomThemeColor(UIColor *color);
+BOOL YTCDTSetCustomThemeColorFromHexString(NSString *hexString);
 void YTCDTClearCustomThemeColor(void);

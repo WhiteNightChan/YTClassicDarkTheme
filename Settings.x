@@ -7,7 +7,7 @@
 #import <YouTubeHeader/YTSettingsViewController.h>
 #import "YTCDTPrefs.h"
 
-static const NSInteger YTClassicDarkThemeSection = 2901;
+static const NSInteger YTClassicDarkThemeSection = 'ycdt';
 
 @interface NSObject (YTClassicDarkThemeSettings)
 - (void)reloadData;
@@ -116,7 +116,70 @@ static inline NSString *CustomColorStatusLabel(void) {
         return titles[(NSUInteger)selectedIndex];
     }
 
-    return @"Saved";
+    NSString *savedHex = YTCDTCustomThemeColorHexString();
+    return savedHex ?: @"Saved";
+}
+
+static inline void YTCDTPresentInvalidHexAlert(UIViewController *presenter) {
+    UIAlertController *alert =
+        [UIAlertController alertControllerWithTitle:@"Invalid HEX Color"
+                                            message:@"Use #RRGGBB or RRGGBB."
+                                     preferredStyle:UIAlertControllerStyleAlert];
+
+    [alert addAction:[UIAlertAction actionWithTitle:@"OK"
+                                              style:UIAlertActionStyleDefault
+                                            handler:nil]];
+
+    [presenter presentViewController:alert animated:YES completion:nil];
+}
+
+static inline void YTCDTPresentHexColorAlert(YTSettingsViewController *delegate) {
+    if (![delegate isKindOfClass:[UIViewController class]]) {
+        return;
+    }
+
+    UIViewController *presenter = (UIViewController *)delegate;
+
+    UIAlertController *alert =
+        [UIAlertController alertControllerWithTitle:@"HEX Color"
+                                            message:@"Enter #RRGGBB or RRGGBB. Saving also sets Mode to Custom."
+                                     preferredStyle:UIAlertControllerStyleAlert];
+
+    [alert addTextFieldWithConfigurationHandler:^(UITextField *textField) {
+        textField.placeholder = @"#1E1E1E";
+        textField.text = YTCDTCustomThemeColorHexString();
+        textField.autocorrectionType = UITextAutocorrectionTypeNo;
+        textField.autocapitalizationType = UITextAutocapitalizationTypeAllCharacters;
+        textField.clearButtonMode = UITextFieldViewModeWhileEditing;
+    }];
+
+    __weak UIAlertController *weakAlert = alert;
+    __weak UIViewController *weakPresenter = presenter;
+
+    [alert addAction:[UIAlertAction actionWithTitle:@"Cancel"
+                                              style:UIAlertActionStyleCancel
+                                            handler:nil]];
+
+    [alert addAction:[UIAlertAction actionWithTitle:@"Save"
+                                              style:UIAlertActionStyleDefault
+                                            handler:^(__unused UIAlertAction *action) {
+        NSString *input = weakAlert.textFields.firstObject.text;
+
+        if (!YTCDTSetCustomThemeColorFromHexString(input)) {
+            if (weakPresenter) {
+                YTCDTPresentInvalidHexAlert(weakPresenter);
+            }
+            return;
+        }
+
+        YTCDTSetThemeMode(YTCDTThemeModeCustom);
+
+        if ([delegate respondsToSelector:@selector(reloadData)]) {
+            [delegate reloadData];
+        }
+    }]];
+
+    [presenter presentViewController:alert animated:YES completion:nil];
 }
 
 %hook YTAppSettingsPresentationData
@@ -262,7 +325,7 @@ static inline NSString *CustomColorStatusLabel(void) {
 
     YTSettingsSectionItem *customColorItem =
         [%c(YTSettingsSectionItem) itemWithTitle:@"Custom Color"
-                                titleDescription:@"Selecting a color also sets Mode to Custom"
+                                titleDescription:@"Preset colors. Selecting a color also sets Mode to Custom"
                          accessibilityIdentifier:@"YTClassicDarkThemeCustomColor"
                                  detailTextBlock:^NSString *{
                                      return CustomColorStatusLabel();
@@ -329,6 +392,24 @@ static inline NSString *CustomColorStatusLabel(void) {
                                          return YES;
                                      }];
     [sectionItems addObject:customColorItem];
+
+    YTSettingsSectionItem *hexColorItem =
+        [%c(YTSettingsSectionItem) itemWithTitle:@"HEX Color"
+                                titleDescription:@"Enter #RRGGBB manually. Saving also sets Mode to Custom"
+                         accessibilityIdentifier:@"YTClassicDarkThemeHexColor"
+                                 detailTextBlock:^NSString *{
+                                     if (!YTCDTHasCustomThemeColor()) {
+                                         return @"None";
+                                     }
+
+                                     NSString *savedHex = YTCDTCustomThemeColorHexString();
+                                     return savedHex ?: @"Saved";
+                                 }
+                                     selectBlock:^BOOL (YTSettingsCell *cell, NSUInteger arg1) {
+                                         YTCDTPresentHexColorAlert(delegate);
+                                         return YES;
+                                     }];
+    [sectionItems addObject:hexColorItem];
 
     if ([delegate respondsToSelector:@selector(setSectionItems:forCategory:title:icon:titleDescription:headerHidden:)]) {
         YTIIcon *icon = [%c(YTIIcon) new];
