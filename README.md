@@ -1,64 +1,53 @@
 # YTClassicDarkTheme
 
-YTClassicDarkTheme is a standalone rootless YouTube tweak that restores the older darker gray appearance, provides an OLED pure black option, and now supports custom dark theme colors including manual HEX input.
+YTClassicDarkTheme is a standalone rootless YouTube tweak that restores the older classic gray dark theme, adds an OLED option, and supports custom dark theme colors.
 
-This tweak is designed to apply a darker theme across YouTube while keeping the implementation simple and stable. Theme changes are applied through launch-time caching, so changes take effect after restarting YouTube.
+The tweak is designed to keep YouTube's dark appearance customizable while staying simple and practical to use inside the YouTube app.
 
 ## Features
 
-YTClassicDarkTheme currently provides the following theme modes:
+- **Classic Gray** theme mode
+- **OLED** theme mode
+- **Custom** theme mode
+- **Preset custom colors**
+- **Manual HEX editing**
+- **HEX selection inside Custom Color**
+- **Remove Rounded Corners** option
+- **OLED Keyboard** option
+- **In-app settings page**
+- **Automatic version display in settings**
+- **Standalone rootless tweak**
+
+## Theme Modes
+
+YTClassicDarkTheme currently supports these modes:
 
 - **Off**
 - **Classic Gray**
 - **OLED**
 - **Custom**
 
-It also provides:
-
-- **OLED Keyboard** toggle
-- **Preset custom colors**
-- **Manual HEX color input**
-- **In-app YouTube settings integration**
-- **Standalone operation without YouGroupSettings dependency**
-
-## Theme Modes
-
 ### Off
-Disables YTClassicDarkTheme.
+Disables the tweak’s theme mode.
 
 ### Classic Gray
-Restores the older gray-style dark appearance instead of YouTube’s newer darker palette.
+Restores the older gray-style dark appearance.
 
 ### OLED
-Uses pure black where the tweak’s active theme color is applied.
+Uses a pure black style for supported themed surfaces.
 
 ### Custom
-Uses a saved custom theme color.
-
-If Custom mode is selected but no custom color is saved, the mode will not apply until a valid custom color is stored.
-
-## OLED Keyboard
-
-YTClassicDarkTheme includes an optional OLED Keyboard setting.
-
-When enabled, supported keyboard-related surfaces used inside YouTube are forced to black. Like the main theme setting, this is applied after restarting YouTube.
-
-## Settings
-
-YTClassicDarkTheme provides its settings inside YouTube’s own settings UI.
-
-Current settings:
-
-- **Mode**
-- **OLED Keyboard**
-- **Custom Color**
-- **HEX Color**
-
-These settings appear and function even without YouGroupSettings.
+Uses the currently selected custom color.
 
 ## Custom Color
 
-Custom Color supports preset dark colors:
+Custom Color includes:
+
+- **Off**
+- **HEX**
+- **Preset colors**
+
+Current preset colors:
 
 - Slate Gray
 - Warm Gray
@@ -66,15 +55,10 @@ Custom Color supports preset dark colors:
 - Deep Purple
 - Olive Dark
 - Charcoal
-- None
 
-Selecting a preset color automatically sets **Mode** to **Custom**.
+## Edit HEX
 
-Selecting **None** clears the saved custom color. If the current mode is **Custom**, selecting **None** also sets **Mode** to **Off**.
-
-## HEX Color
-
-YTClassicDarkTheme supports manual HEX color entry for custom theme colors.
+HEX values can be edited from the main settings page through **Edit HEX**.
 
 Supported formats:
 
@@ -86,63 +70,67 @@ Examples:
 - `#1E1E1E`
 - `1E1E1E`
 
-Behavior:
+Invalid input is rejected.
 
-- Saving a valid HEX color automatically sets **Mode** to **Custom**
-- Invalid HEX input is rejected
-- Invalid input does not overwrite the existing saved color
-- The saved custom color status can appear as a HEX string when it does not match a preset color
+## Remove Rounded Corners
 
-## How Settings Are Stored
+YTClassicDarkTheme includes an optional **Remove Rounded Corners** setting.
 
-YTClassicDarkTheme uses the following preference keys:
+When enabled, the rounded area below the player is removed using the tweak’s current behavior for those views.
 
-- `classicDarkTheme_mode`
-- `classicDarkTheme_oledKeyboard`
-- `classicDarkTheme_customColor`
+## OLED Keyboard
 
-Mode values:
+YTClassicDarkTheme includes an optional **OLED Keyboard** setting.
 
-- `0 = Off`
-- `1 = Classic Gray`
-- `2 = OLED`
-- `3 = Custom`
+When enabled, supported keyboard-related surfaces used inside YouTube are forced to black.
 
-The custom theme color is stored as a serialized `UIColor`, not as a raw HEX string. HEX input is converted to `UIColor` before saving. This keeps the runtime theme application path compatible with existing behavior.
+## Settings
 
-## Apply Behavior
+YTClassicDarkTheme provides its settings directly inside YouTube.
+
+Current settings:
+
+- **Mode**
+- **Custom Color**
+- **Edit HEX**
+- **Remove Rounded Corners**
+- **OLED Keyboard**
+- **Version**
+
+## How Changes Are Applied
 
 YTClassicDarkTheme uses a launch-time cache model.
 
-That means:
+That means changes are not fully live-applied across the app.
 
-- theme settings are read when YouTube starts
-- changing settings does **not** live-refresh the whole theme
-- you must **restart YouTube** after changing:
-  - Mode
-  - OLED Keyboard
-  - Custom Color
-  - HEX Color
+Restart YouTube after changing:
+
+- Mode
+- Custom Color
+- Edit HEX
+- Remove Rounded Corners
+- OLED Keyboard
+
+## Preferences
+
+YTClassicDarkTheme currently uses these main preference keys:
+
+- `classicDarkTheme_mode`
+- `classicDarkTheme_oledKeyboard`
+- `classicDarkTheme_removeRoundedCorners`
+- `classicDarkTheme_customColor`
 
 ## Notes
 
-- This tweak is intended to be a **standalone rootless tweak**
-- It is implemented using `Tweak.x`
-- Preference access is centralized in `YTCDTPrefs.h` / `YTCDTPrefs.m`
-- In-app settings are provided through `Settings.x`
-- YouGroupSettings is **not required**
-- A comments-detail bright gray leak on the left side was resolved with a minimal `_ASDisplayView` background fill adjustment for `id.ui.comment_cell`
-- The tweak intentionally uses a fill-based approach in certain places to reduce visual mismatch and help avoid screen-burn-style bright patches
+- This tweak is intended to work as a **standalone rootless tweak**
+- It does **not** require YouGroupSettings
+- Settings are provided through YouTube’s in-app settings UI
+- Theme behavior depends on YouTube’s internal UI structure
+- Some surfaces may require future maintenance if YouTube changes internal classes or layouts
 
-## Compatibility Notes
+## Source Files
 
-Because the tweak relies on YouTube internal classes and view structures, some areas may require additional maintenance if YouTube changes internal UI behavior.
-
-The theme is currently based on targeted background overrides and related hooks. Future YouTube updates may introduce new surfaces that need separate coverage.
-
-## Source Layout
-
-Typical relevant files:
+Main files currently include:
 
 - `Tweak.x`
 - `Settings.x`
@@ -151,25 +139,10 @@ Typical relevant files:
 
 ## Version
 
-**v0.5.0**
-
-### Highlights in v0.5.0
-
-- Added **manual HEX custom color input**
-- Preserved existing `UIColor`-based saved color format
-- Kept `Tweak.x` theme application flow unchanged
-- Added HEX-based custom color status display for non-preset saved colors
-- Preserved existing preset color, None, Custom mode, and OLED Keyboard behavior
-
-## Usage
-
-1. Open YouTube settings
-2. Open **Classic Dark Theme**
-3. Choose a theme mode, preset color, or enter a HEX color
-4. Restart YouTube
-5. Reopen YouTube to see the applied theme
+**v0.6.0**
 
 ## Disclaimer
 
 This project modifies YouTube’s internal UI behavior and may require updates as the app changes.
+
 Use at your own discretion.

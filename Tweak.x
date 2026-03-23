@@ -3,6 +3,7 @@
 
 static YTCDTThemeMode cachedThemeMode = YTCDTThemeModeOff;
 static BOOL cachedOLEDKeyboardEnabled = NO;
+static BOOL cachedRemoveRoundedCornersEnabled = NO;
 static UIColor *customThemeColor = nil;
 
 static inline BOOL isThemeEnabled() {
@@ -106,6 +107,25 @@ static inline UIColor *activeSecondaryThemeColor() {
 }
 %end
 
+%hook YTWatchRoundedCornersView
+- (void)didMoveToWindow {
+    %orig;
+
+    if (isThemeEnabled() && !cachedRemoveRoundedCornersEnabled) {
+        self.backgroundColor = activeThemeColor();
+    }
+}
+
+- (void)setHidden:(BOOL)hidden {
+    if (isThemeEnabled() && cachedRemoveRoundedCornersEnabled) {
+        %orig(YES);
+        return;
+    }
+
+    %orig(hidden);
+}
+%end
+
 %hook ASScrollView
 - (void)didMoveToWindow {
     %orig;
@@ -189,6 +209,18 @@ static inline UIColor *activeSecondaryThemeColor() {
     } else {
         %orig;
     }
+}
+%end
+
+%hook YTChipCloudCell
+- (void)didMoveToWindow {
+    %orig;
+
+    if (!isThemeEnabled() || !cachedRemoveRoundedCornersEnabled) {
+        return;
+    }
+
+    self.hidden = YES;
 }
 %end
 
@@ -295,6 +327,15 @@ static inline UIColor *activeSecondaryThemeColor() {
         return;
     }
 
+    NSString *identifier = self.accessibilityIdentifier;
+    NSString *parentIdentifier = self.superview.accessibilityIdentifier;
+
+    if ([identifier isEqualToString:@"eml.animated_subscribe_button"] ||
+        [parentIdentifier isEqualToString:@"eml.animated_subscribe_button"]) {
+        self.backgroundColor = [UIColor clearColor];
+        return;
+    }
+
     UIResponder *responder = [self nextResponder];
     while (responder != nil) {
         if ([responder isKindOfClass:NSClassFromString(@"YTActionSheetDialogViewController")]) {
@@ -351,9 +392,18 @@ static inline UIColor *activeSecondaryThemeColor() {
         self.backgroundColor = [UIColor clearColor];
     }
 
-    if ([identifier isEqualToString:@"brand_promo.view"]) {
+    NSString *parentIdentifier = self.superview.accessibilityIdentifier;
+
+    if ([identifier isEqualToString:@"eml.animated_subscribe_button"] ||
+        [parentIdentifier isEqualToString:@"eml.animated_subscribe_button"]) {
+        return;
+    }
+
+    if ([identifier isEqualToString:@"brand_promo.view"] ||
+        [parentIdentifier isEqualToString:@"brand_promo.view"]) {
         self.backgroundColor = activeThemeColor();
     }
+
     if ([identifier isEqualToString:@"eml.cvr"]) {
         self.backgroundColor = activeThemeColor();
     }
@@ -366,21 +416,28 @@ static inline UIColor *activeSecondaryThemeColor() {
     if ([identifier isEqualToString:@"rich_header"]) {
         self.backgroundColor = activeThemeColor();
     }
+
     if ([identifier isEqualToString:@"id.ui.comment_cell"]) {
         self.backgroundColor = activeThemeColor();
         if (self.superview) {
             self.superview.backgroundColor = activeThemeColor();
         }
     }
+
     if ([identifier isEqualToString:@"id.ui.comment_thread"]) {
         self.backgroundColor = activeThemeColor();
     }
     if ([identifier isEqualToString:@"id.elements.components.comment_composer"]) {
         self.backgroundColor = activeThemeColor();
     }
+
     if ([identifier isEqualToString:@"id.elements.components.filter_chip_bar"]) {
         self.backgroundColor = activeThemeColor();
+        if (self.superview) {
+            self.superview.backgroundColor = activeThemeColor();
+        }
     }
+
     if ([identifier isEqualToString:@"id.elements.components.video_list_entry"]) {
         self.backgroundColor = activeThemeColor();
     }
@@ -490,6 +547,7 @@ static inline UIColor *activeSecondaryThemeColor() {
 %ctor {
     cachedThemeMode = YTCDTThemeModeValue();
     cachedOLEDKeyboardEnabled = YTCDTOLEDKeyboardEnabled();
+    cachedRemoveRoundedCornersEnabled = YTCDTRemoveRoundedCornersEnabled();
     customThemeColor = YTCDTCustomThemeColor();
 
     if (cachedThemeMode == YTCDTThemeModeClassicGray ||

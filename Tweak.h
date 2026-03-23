@@ -31,6 +31,12 @@
 @interface YTSearchBoxView : UIView
 @end
 
+@interface YTWatchRoundedCornersView : UIView
+@end
+
+@interface YTChipCloudCell : UIView
+@end
+
 @interface YTCommentView : UIView
 @end
 
