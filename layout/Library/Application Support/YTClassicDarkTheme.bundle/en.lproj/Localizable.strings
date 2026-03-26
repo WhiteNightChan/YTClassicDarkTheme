@@ -1,0 +1,68 @@
+"SETTINGS_RESTART_REQUIRED_HEADER" = "Changes will take effect after restarting the app";
+
+"SETTINGS_ENABLE_THEME_TITLE" = "Enable Theme";
+"SETTINGS_ENABLE_THEME_DESCRIPTION" = "Enable or disable the tweak";
+
+"SETTINGS_THEME_TYPE_TITLE" = "Theme Type";
+"SETTINGS_THEME_TYPE_DESCRIPTION" = "Choose whether the tweak uses Built-in or Custom Color";
+"SETTINGS_THEME_TYPE_PICKER_TITLE" = "Theme Type";
+
+"SETTINGS_BUILT_IN_TITLE" = "Built-in";
+"SETTINGS_CUSTOM_COLOR_TITLE" = "Custom Color";
+
+"SETTINGS_THEME_TYPE_BUILT_IN_DESCRIPTION" = "Use Classic Gray or OLED";
+"SETTINGS_THEME_TYPE_CUSTOM_COLOR_DESCRIPTION" = "Use HEX or a preset color";
+
+"SETTINGS_APPEARANCE_HEADER" = "Appearance";
+
+"SETTINGS_BUILT_IN_STYLE_TITLE" = "Built-in";
+"SETTINGS_BUILT_IN_STYLE_DESCRIPTION" = "Choose Classic Gray or OLED. Selecting one switches Theme Type to Built-in";
+"SETTINGS_BUILT_IN_STYLE_PICKER_TITLE" = "Built-in";
+
+"SETTINGS_CLASSIC_GRAY_TITLE" = "Classic Gray";
+"SETTINGS_CLASSIC_GRAY_DESCRIPTION" = "Restore the classic gray dark theme";
+
+"SETTINGS_OLED_TITLE" = "OLED";
+"SETTINGS_OLED_DESCRIPTION" = "Use pure black OLED dark mode";
+
+"SETTINGS_CUSTOM_COLOR_DESCRIPTION" = "Choose HEX or a preset. Selecting one switches Theme Type to Custom Color";
+"SETTINGS_CUSTOM_COLOR_PICKER_TITLE" = "Custom Color";
+
+"SETTINGS_HEX_TITLE" = "HEX";
+"SETTINGS_HEX_DESCRIPTION_FORMAT" = "Use saved HEX color (%@)";
+"SETTINGS_HEX_DESCRIPTION_NONE" = "No saved HEX color";
+
+"SETTINGS_PRESET_APPLY_DESCRIPTION" = "Apply this preset color";
+
+"SETTINGS_PRESET_SLATE_GRAY" = "Slate Gray";
+"SETTINGS_PRESET_WARM_GRAY" = "Warm Gray";
+"SETTINGS_PRESET_MIDNIGHT_BLUE" = "Midnight Blue";
+"SETTINGS_PRESET_DEEP_PURPLE" = "Deep Purple";
+"SETTINGS_PRESET_OLIVE_DARK" = "Olive Dark";
+"SETTINGS_PRESET_CHARCOAL" = "Charcoal";
+
+"SETTINGS_STATUS_NONE" = "None";
+
+"SETTINGS_EDIT_HEX_TITLE" = "Edit HEX";
+"SETTINGS_EDIT_HEX_DESCRIPTION" = "Enter or update #RRGGBB manually. Saving switches Theme Type to Custom Color";
+
+"ALERT_INVALID_HEX_TITLE" = "Invalid HEX Color";
+"ALERT_INVALID_HEX_MESSAGE" = "Use #RRGGBB or RRGGBB.";
+"ALERT_HEX_TITLE" = "HEX";
+"ALERT_HEX_MESSAGE" = "Enter #RRGGBB or RRGGBB. Saving switches Theme Type to Custom Color. Restart YouTube after saving.";
+"ALERT_CANCEL" = "Cancel";
+"ALERT_SAVE" = "Save";
+"ALERT_OK" = "OK";
+"ALERT_HEX_PLACEHOLDER" = "#1E1E1E";
+
+"SETTINGS_OPTIONS_HEADER" = "Options";
+
+"SETTINGS_REMOVE_ROUNDED_CORNERS_TITLE" = "Remove Rounded Corners";
+"SETTINGS_REMOVE_ROUNDED_CORNERS_DESCRIPTION" = "Remove the rounded corners below the player";
+
+"SETTINGS_OLED_KEYBOARD_TITLE" = "OLED Keyboard";
+"SETTINGS_OLED_KEYBOARD_DESCRIPTION" = "Enable OLED keyboard";
+
+"SETTINGS_VERSION_TITLE" = "Version";
+
+"SETTINGS_SECTION_TITLE" = "Classic Dark Theme";

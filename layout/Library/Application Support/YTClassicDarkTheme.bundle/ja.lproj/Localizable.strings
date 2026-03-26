@@ -1,0 +1,68 @@
+"SETTINGS_RESTART_REQUIRED_HEADER" = "変更を適用するにはアプリの再起動が必要です";
+
+"SETTINGS_ENABLE_THEME_TITLE" = "テーマを有効化";
+"SETTINGS_ENABLE_THEME_DESCRIPTION" = "このTweakを有効または無効にします";
+
+"SETTINGS_THEME_TYPE_TITLE" = "テーマタイプ";
+"SETTINGS_THEME_TYPE_DESCRIPTION" = "ビルトインカラーとカスタムカラーのどちらを使うか選びます";
+"SETTINGS_THEME_TYPE_PICKER_TITLE" = "テーマタイプ";
+
+"SETTINGS_BUILT_IN_TITLE" = "ビルトインカラー";
+"SETTINGS_CUSTOM_COLOR_TITLE" = "カスタムカラー";
+
+"SETTINGS_THEME_TYPE_BUILT_IN_DESCRIPTION" = "クラシックグレーまたはOLED(有機EL)を使います";
+"SETTINGS_THEME_TYPE_CUSTOM_COLOR_DESCRIPTION" = "HEX(カラーコード)またはプリセット色を使います";
+
+"SETTINGS_APPEARANCE_HEADER" = "外観";
+
+"SETTINGS_BUILT_IN_STYLE_TITLE" = "ビルトインカラー";
+"SETTINGS_BUILT_IN_STYLE_DESCRIPTION" = "クラシックグレーまたはOLED(有機EL)を選んでください。選択するとテーマタイプはビルトインカラーに切り替わります";
+"SETTINGS_BUILT_IN_STYLE_PICKER_TITLE" = "ビルトインカラー";
+
+"SETTINGS_CLASSIC_GRAY_TITLE" = "クラシックグレー";
+"SETTINGS_CLASSIC_GRAY_DESCRIPTION" = "v16-17の頃のクラシックなグレーのダークテーマにします";
+
+"SETTINGS_OLED_TITLE" = "OLED";
+"SETTINGS_OLED_DESCRIPTION" = "OLED(有機EL)のダークテーマにします";
+
+"SETTINGS_CUSTOM_COLOR_DESCRIPTION" = "HEX(カラーコード)またはプリセットを選びます。選択するとテーマタイプはカスタムカラーに切り替わります";
+"SETTINGS_CUSTOM_COLOR_PICKER_TITLE" = "カスタムカラー";
+
+"SETTINGS_HEX_TITLE" = "HEX";
+"SETTINGS_HEX_DESCRIPTION_FORMAT" = "保存済みのHEX(カラーコード)の色を使います (%@)";
+"SETTINGS_HEX_DESCRIPTION_NONE" = "保存済みのHEX(カラーコード)の色はありません";
+
+"SETTINGS_PRESET_APPLY_DESCRIPTION" = "このプリセット色を適用します";
+
+"SETTINGS_PRESET_SLATE_GRAY" = "スレートグレー";
+"SETTINGS_PRESET_WARM_GRAY" = "ウォームグレー";
+"SETTINGS_PRESET_MIDNIGHT_BLUE" = "ミッドナイトブルー";
+"SETTINGS_PRESET_DEEP_PURPLE" = "ディープパープル";
+"SETTINGS_PRESET_OLIVE_DARK" = "ダークオリーブ";
+"SETTINGS_PRESET_CHARCOAL" = "チャコール";
+
+"SETTINGS_STATUS_NONE" = "なし";
+
+"SETTINGS_EDIT_HEX_TITLE" = "HEXを編集";
+"SETTINGS_EDIT_HEX_DESCRIPTION" = "#RRGGBBを手動で入力または更新します。保存するとテーマタイプはカスタムカラーに切り替わります";
+
+"ALERT_INVALID_HEX_TITLE" = "無効なHEXカラー";
+"ALERT_INVALID_HEX_MESSAGE" = "#RRGGBBまたはRRGGBBの形式で入力してください。";
+"ALERT_HEX_TITLE" = "HEX";
+"ALERT_HEX_MESSAGE" = "#RRGGBBまたはRRGGBBを入力してください。保存するとテーマタイプはカスタムカラーに切り替わります。変更を適用するにはアプリの再起動が必要です。";
+"ALERT_CANCEL" = "キャンセル";
+"ALERT_SAVE" = "保存";
+"ALERT_OK" = "OK";
+"ALERT_HEX_PLACEHOLDER" = "#1E1E1E";
+
+"SETTINGS_OPTIONS_HEADER" = "オプション";
+
+"SETTINGS_REMOVE_ROUNDED_CORNERS_TITLE" = "角丸を削除";
+"SETTINGS_REMOVE_ROUNDED_CORNERS_DESCRIPTION" = "プレイヤー下部の角丸を削除します";
+
+"SETTINGS_OLED_KEYBOARD_TITLE" = "OLEDキーボード";
+"SETTINGS_OLED_KEYBOARD_DESCRIPTION" = "OLED(有機EL)キーボードを有効にします";
+
+"SETTINGS_VERSION_TITLE" = "バージョン";
+
+"SETTINGS_SECTION_TITLE" = "Classic Dark Theme";

@@ -1,26 +1,28 @@
 #import "Tweak.h"
 #import "YTCDTPrefs.h"
 
-static YTCDTThemeMode cachedThemeMode = YTCDTThemeModeOff;
+static BOOL cachedEnabled = NO;
+static YTCDTThemeType cachedThemeType = YTCDTThemeTypeBuiltIn;
+static YTCDTBuiltInStyle cachedBuiltInStyle = YTCDTBuiltInStyleClassicGray;
 static BOOL cachedOLEDKeyboardEnabled = NO;
 static BOOL cachedRemoveRoundedCornersEnabled = NO;
 static UIColor *customThemeColor = nil;
 
-static inline BOOL isThemeEnabled() {
-    return cachedThemeMode == YTCDTThemeModeClassicGray ||
-           cachedThemeMode == YTCDTThemeModeOLED ||
-           cachedThemeMode == YTCDTThemeModeCustom;
+static inline BOOL isBuiltInThemeEnabled() {
+    return cachedEnabled && cachedThemeType == YTCDTThemeTypeBuiltIn;
 }
 
 static inline BOOL isOLEDThemeEnabled() {
-    return cachedThemeMode == YTCDTThemeModeOLED;
+    return isBuiltInThemeEnabled() && cachedBuiltInStyle == YTCDTBuiltInStyleOLED;
 }
 
 static inline BOOL isCustomThemeEnabled() {
-    return cachedThemeMode == YTCDTThemeModeCustom && customThemeColor != nil;
+    return cachedEnabled &&
+           cachedThemeType == YTCDTThemeTypeCustomColor &&
+           customThemeColor != nil;
 }
 
-static inline UIColor *oldDarkThemeColor() {
+static inline UIColor *classicGrayThemeColor() {
     return [UIColor colorWithRed:0.129 green:0.129 blue:0.129 alpha:1.0];
 }
 
@@ -33,77 +35,99 @@ static inline UIColor *sheetRaisedColor() {
 }
 
 static inline UIColor *activeThemeColor() {
-    if (isOLEDThemeEnabled()) {
-        return oledThemeColor();
-    }
-
     if (isCustomThemeEnabled()) {
         return customThemeColor;
     }
 
-    return oldDarkThemeColor();
+    if (isOLEDThemeEnabled()) {
+        return oledThemeColor();
+    }
+
+    return classicGrayThemeColor();
 }
 
 static inline UIColor *activeSecondaryThemeColor() {
     return [activeThemeColor() colorWithAlphaComponent:0.9];
 }
 
+static inline BOOL shouldApplyYTCDTTheme(void) {
+    return isBuiltInThemeEnabled() || isCustomThemeEnabled();
+}
+
+static inline BOOL isGonerinoListViewController(id object) {
+    Class cls = NSClassFromString(@"ListViewController");
+    return cls != Nil && [object isKindOfClass:cls];
+}
+
 %group gClassicDarkTheme
 
 %hook YTCommonColorPalette
 - (UIColor *)background1 {
-    return activeThemeColor();
+    UIColor *origColor = %orig;
+    return shouldApplyYTCDTTheme() ? activeThemeColor() : origColor;
 }
 - (UIColor *)background2 {
-    return activeThemeColor();
+    UIColor *origColor = %orig;
+    return shouldApplyYTCDTTheme() ? activeThemeColor() : origColor;
 }
 - (UIColor *)background3 {
-    return activeThemeColor();
+    UIColor *origColor = %orig;
+    return shouldApplyYTCDTTheme() ? activeThemeColor() : origColor;
 }
 - (UIColor *)baseBackground {
-    return activeThemeColor();
+    UIColor *origColor = %orig;
+    return shouldApplyYTCDTTheme() ? activeThemeColor() : origColor;
 }
 - (UIColor *)brandBackgroundSolid {
-    return activeThemeColor();
+    UIColor *origColor = %orig;
+    return shouldApplyYTCDTTheme() ? activeThemeColor() : origColor;
 }
 - (UIColor *)brandBackgroundPrimary {
-    return activeThemeColor();
+    UIColor *origColor = %orig;
+    return shouldApplyYTCDTTheme() ? activeThemeColor() : origColor;
 }
 - (UIColor *)brandBackgroundSecondary {
-    return activeSecondaryThemeColor();
+    UIColor *origColor = %orig;
+    return shouldApplyYTCDTTheme() ? activeSecondaryThemeColor() : origColor;
 }
 - (UIColor *)raisedBackground {
-    return activeThemeColor();
+    UIColor *origColor = %orig;
+    return shouldApplyYTCDTTheme() ? activeThemeColor() : origColor;
 }
 - (UIColor *)staticBrandBlack {
-    return activeThemeColor();
+    UIColor *origColor = %orig;
+    return shouldApplyYTCDTTheme() ? activeThemeColor() : origColor;
 }
 - (UIColor *)generalBackgroundA {
-    return activeThemeColor();
+    UIColor *origColor = %orig;
+    return shouldApplyYTCDTTheme() ? activeThemeColor() : origColor;
 }
 - (UIColor *)generalBackgroundB {
-    return activeThemeColor();
+    UIColor *origColor = %orig;
+    return shouldApplyYTCDTTheme() ? activeThemeColor() : origColor;
 }
 - (UIColor *)menuBackground {
-    return activeThemeColor();
+    UIColor *origColor = %orig;
+    return shouldApplyYTCDTTheme() ? activeThemeColor() : origColor;
 }
 %end
 
 %hook YTColdConfig
 - (BOOL)uiSystemsClientGlobalConfigUseDarkerPaletteBgColorForNative {
-    return NO;
+    return shouldApplyYTCDTTheme() ? NO : %orig;
 }
 - (BOOL)uiSystemsClientGlobalConfigUseDarkerPaletteTextColorForNative {
-    return NO;
+    return shouldApplyYTCDTTheme() ? NO : %orig;
 }
 - (BOOL)enableCinematicContainerOnClient {
-    return NO;
+    return shouldApplyYTCDTTheme() ? NO : %orig;
 }
 %end
 
 %hook YTInnerTubeCollectionViewController
 - (UIColor *)backgroundColor:(NSInteger)pageStyle {
-    return activeThemeColor();
+    UIColor *origColor = %orig;
+    return shouldApplyYTCDTTheme() ? activeThemeColor() : origColor;
 }
 %end
 
@@ -111,13 +135,13 @@ static inline UIColor *activeSecondaryThemeColor() {
 - (void)didMoveToWindow {
     %orig;
 
-    if (isThemeEnabled() && !cachedRemoveRoundedCornersEnabled) {
+    if (shouldApplyYTCDTTheme() && !cachedRemoveRoundedCornersEnabled) {
         self.backgroundColor = activeThemeColor();
     }
 }
 
 - (void)setHidden:(BOOL)hidden {
-    if (isThemeEnabled() && cachedRemoveRoundedCornersEnabled) {
+    if (cachedRemoveRoundedCornersEnabled) {
         %orig(YES);
         return;
     }
@@ -130,7 +154,7 @@ static inline UIColor *activeSecondaryThemeColor() {
 - (void)didMoveToWindow {
     %orig;
 
-    if (isThemeEnabled()) {
+    if (shouldApplyYTCDTTheme()) {
         self.backgroundColor = [UIColor clearColor];
     }
 }
@@ -140,7 +164,7 @@ static inline UIColor *activeSecondaryThemeColor() {
 - (void)didMoveToWindow {
     %orig;
 
-    if (!isThemeEnabled()) {
+    if (!shouldApplyYTCDTTheme()) {
         return;
     }
 
@@ -158,7 +182,7 @@ static inline UIColor *activeSecondaryThemeColor() {
 - (void)didMoveToWindow {
     %orig;
 
-    if (!isThemeEnabled()) {
+    if (!shouldApplyYTCDTTheme()) {
         return;
     }
 
@@ -172,7 +196,7 @@ static inline UIColor *activeSecondaryThemeColor() {
 - (void)didMoveToWindow {
     %orig;
 
-    if (!isThemeEnabled()) {
+    if (!shouldApplyYTCDTTheme()) {
         return;
     }
 
@@ -184,7 +208,7 @@ static inline UIColor *activeSecondaryThemeColor() {
 
 %hook YTSearchBarView
 - (void)setBackgroundColor:(UIColor *)color {
-    if (isThemeEnabled()) {
+    if (shouldApplyYTCDTTheme()) {
         %orig(activeThemeColor());
     } else {
         %orig;
@@ -194,7 +218,7 @@ static inline UIColor *activeSecondaryThemeColor() {
 
 %hook YTSearchBoxView
 - (void)setBackgroundColor:(UIColor *)color {
-    if (isThemeEnabled()) {
+    if (shouldApplyYTCDTTheme()) {
         %orig(activeThemeColor());
     } else {
         %orig;
@@ -204,7 +228,7 @@ static inline UIColor *activeSecondaryThemeColor() {
 
 %hook YTCommentView
 - (void)setBackgroundColor:(UIColor *)color {
-    if (isThemeEnabled()) {
+    if (shouldApplyYTCDTTheme()) {
         %orig(activeThemeColor());
     } else {
         %orig;
@@ -216,7 +240,7 @@ static inline UIColor *activeSecondaryThemeColor() {
 - (void)didMoveToWindow {
     %orig;
 
-    if (!isThemeEnabled() || !cachedRemoveRoundedCornersEnabled) {
+    if (!cachedRemoveRoundedCornersEnabled) {
         return;
     }
 
@@ -226,7 +250,7 @@ static inline UIColor *activeSecondaryThemeColor() {
 
 %hook YTCreateCommentAccessoryView
 - (void)setBackgroundColor:(UIColor *)color {
-    if (isThemeEnabled()) {
+    if (shouldApplyYTCDTTheme()) {
         %orig(activeThemeColor());
     } else {
         %orig;
@@ -236,7 +260,7 @@ static inline UIColor *activeSecondaryThemeColor() {
 
 %hook YTCreateCommentTextView
 - (void)setBackgroundColor:(UIColor *)color {
-    if (isThemeEnabled()) {
+    if (shouldApplyYTCDTTheme()) {
         %orig(activeThemeColor());
     } else {
         %orig;
@@ -244,7 +268,7 @@ static inline UIColor *activeSecondaryThemeColor() {
 }
 
 - (void)setTextColor:(UIColor *)color {
-    if (isThemeEnabled()) {
+    if (shouldApplyYTCDTTheme()) {
         %orig([UIColor whiteColor]);
     } else {
         %orig;
@@ -254,7 +278,7 @@ static inline UIColor *activeSecondaryThemeColor() {
 
 %hook YTFormattedStringLabel
 - (void)setBackgroundColor:(UIColor *)color {
-    if (isThemeEnabled()) {
+    if (shouldApplyYTCDTTheme()) {
         %orig([UIColor clearColor]);
     } else {
         %orig;
@@ -264,7 +288,7 @@ static inline UIColor *activeSecondaryThemeColor() {
 
 %hook YCHLiveChatActionPanelView
 - (void)setBackgroundColor:(UIColor *)color {
-    if (isThemeEnabled()) {
+    if (shouldApplyYTCDTTheme()) {
         %orig(activeThemeColor());
     } else {
         %orig;
@@ -274,7 +298,7 @@ static inline UIColor *activeSecondaryThemeColor() {
 
 %hook YTEmojiTextView
 - (void)setBackgroundColor:(UIColor *)color {
-    if (isThemeEnabled()) {
+    if (shouldApplyYTCDTTheme()) {
         %orig(activeThemeColor());
     } else {
         %orig;
@@ -284,7 +308,7 @@ static inline UIColor *activeSecondaryThemeColor() {
 
 %hook YTCollectionView
 - (void)setBackgroundColor:(UIColor *)color {
-    if (isThemeEnabled()) {
+    if (shouldApplyYTCDTTheme()) {
         %orig(activeThemeColor());
     } else {
         %orig;
@@ -294,7 +318,7 @@ static inline UIColor *activeSecondaryThemeColor() {
 
 %hook YTBackstageCreateRepostDetailView
 - (void)setBackgroundColor:(UIColor *)color {
-    if (isThemeEnabled()) {
+    if (shouldApplyYTCDTTheme()) {
         %orig(activeThemeColor());
     } else {
         %orig;
@@ -302,11 +326,62 @@ static inline UIColor *activeSecondaryThemeColor() {
 }
 %end
 
+%hook UIViewController
+
+- (void)viewDidLoad {
+    %orig;
+
+    if (!shouldApplyYTCDTTheme() || !isGonerinoListViewController(self)) {
+        return;
+    }
+
+    self.view.backgroundColor = activeThemeColor();
+
+    if ([self isKindOfClass:[UITableViewController class]]) {
+        UITableView *tableView = ((UITableViewController *)self).tableView;
+        if ([tableView isKindOfClass:[UITableView class]]) {
+            tableView.backgroundColor = activeThemeColor();
+        }
+    }
+
+    UINavigationController *nav = self.navigationController;
+    if ([nav isKindOfClass:[UINavigationController class]]) {
+        nav.toolbar.barTintColor = activeThemeColor();
+        nav.toolbar.backgroundColor = activeThemeColor();
+        nav.toolbar.translucent = NO;
+    }
+}
+
+- (void)viewWillAppear:(BOOL)animated {
+    %orig;
+
+    if (!shouldApplyYTCDTTheme() || !isGonerinoListViewController(self)) {
+        return;
+    }
+
+    self.view.backgroundColor = activeThemeColor();
+
+    if ([self isKindOfClass:[UITableViewController class]]) {
+        UITableView *tableView = ((UITableViewController *)self).tableView;
+        if ([tableView isKindOfClass:[UITableView class]]) {
+            tableView.backgroundColor = activeThemeColor();
+        }
+    }
+
+    UINavigationController *nav = self.navigationController;
+    if ([nav isKindOfClass:[UINavigationController class]]) {
+        nav.toolbar.barTintColor = activeThemeColor();
+        nav.toolbar.backgroundColor = activeThemeColor();
+    }
+}
+
+%end
+
 %hook UIApplication
 - (void)applicationDidFinishLaunching:(UIApplication *)application {
     %orig;
 
-    if (!isThemeEnabled()) {
+    if (!shouldApplyYTCDTTheme()) {
         return;
     }
 
@@ -323,7 +398,7 @@ static inline UIColor *activeSecondaryThemeColor() {
 - (void)layoutSubviews {
     %orig;
 
-    if (!isThemeEnabled()) {
+    if (!shouldApplyYTCDTTheme()) {
         return;
     }
 
@@ -357,7 +432,7 @@ static inline UIColor *activeSecondaryThemeColor() {
 - (void)didMoveToWindow {
     %orig;
 
-    if (!isThemeEnabled()) {
+    if (!shouldApplyYTCDTTheme()) {
         return;
     }
 
@@ -466,7 +541,8 @@ static inline UIColor *activeSecondaryThemeColor() {
 
 %hook ASWAppSwitchingSheetHeaderView
 - (void)setBackgroundColor:(UIColor *)color {
-    if (isOLEDThemeEnabled() || isCustomThemeEnabled()) {
+    if (shouldApplyYTCDTTheme() &&
+        (isOLEDThemeEnabled() || isCustomThemeEnabled())) {
         %orig(sheetRaisedColor());
     } else {
         %orig;
@@ -476,7 +552,8 @@ static inline UIColor *activeSecondaryThemeColor() {
 
 %hook ASWAppSwitchingSheetFooterView
 - (void)setBackgroundColor:(UIColor *)color {
-    if (isOLEDThemeEnabled() || isCustomThemeEnabled()) {
+    if (shouldApplyYTCDTTheme() &&
+        (isOLEDThemeEnabled() || isCustomThemeEnabled())) {
         %orig(sheetRaisedColor());
     } else {
         %orig;
@@ -487,8 +564,8 @@ static inline UIColor *activeSecondaryThemeColor() {
 %hook ASWAppSwitcherCollectionViewCell
 - (void)didMoveToWindow {
     %orig;
-
-    if (isOLEDThemeEnabled() || isCustomThemeEnabled()) {
+    if (shouldApplyYTCDTTheme() &&
+        (isOLEDThemeEnabled() || isCustomThemeEnabled())) {
         self.backgroundColor = sheetRaisedColor();
         if (self.superview) {
             self.superview.backgroundColor = sheetRaisedColor();
@@ -545,14 +622,17 @@ static inline UIColor *activeSecondaryThemeColor() {
 %end
 
 %ctor {
-    cachedThemeMode = YTCDTThemeModeValue();
+    cachedEnabled = YTCDTEnabled();
+    cachedThemeType = YTCDTThemeTypeValue();
+    cachedBuiltInStyle = YTCDTBuiltInStyleValue();
     cachedOLEDKeyboardEnabled = YTCDTOLEDKeyboardEnabled();
     cachedRemoveRoundedCornersEnabled = YTCDTRemoveRoundedCornersEnabled();
     customThemeColor = YTCDTCustomThemeColor();
 
-    if (cachedThemeMode == YTCDTThemeModeClassicGray ||
-        cachedThemeMode == YTCDTThemeModeOLED ||
-        (cachedThemeMode == YTCDTThemeModeCustom && customThemeColor != nil)) {
+    if (cachedRemoveRoundedCornersEnabled ||
+        (cachedEnabled &&
+         (cachedThemeType == YTCDTThemeTypeBuiltIn ||
+          (cachedThemeType == YTCDTThemeTypeCustomColor && customThemeColor != nil)))) {
         %init(gClassicDarkTheme);
     }
 

@@ -7,12 +7,65 @@
 #import <YouTubeHeader/YTSettingsViewController.h>
 #import "YTCDTPrefs.h"
 
+#define SECTION_HEADER(headerTitle)                                                                                    \
+    [sectionItems addObject:[objc_getClass("YTSettingsSectionItem")                                                    \
+                                          itemWithTitle:@"\t"                                                          \
+                                       titleDescription:headerTitle                                                    \
+                                accessibilityIdentifier:nil                                                            \
+                                        detailTextBlock:nil                                                            \
+                                            selectBlock:^BOOL(YTSettingsCell *cell, NSUInteger sectionItemIndex) {     \
+                                                return NO;                                                             \
+                                            }]]
+
 #ifndef PACKAGE_VERSION
 #define PACKAGE_VERSION @"Unknown"
 #endif
 
 static inline NSString *YTCDTVersionLabel(void) {
     return PACKAGE_VERSION;
+}
+
+static NSString *YTCDTLocalizationBundlePath(void) {
+    NSString *rootlessBundlePath =
+        @"/var/jb/Library/Application Support/YTClassicDarkTheme.bundle";
+
+    if ([[NSFileManager defaultManager] fileExistsAtPath:rootlessBundlePath]) {
+        return rootlessBundlePath;
+    }
+
+    NSString *sideloadBundlePath =
+        [[NSBundle mainBundle] pathForResource:@"YTClassicDarkTheme"
+                                        ofType:@"bundle"];
+    if (sideloadBundlePath.length > 0) {
+        return sideloadBundlePath;
+    }
+
+    return nil;
+}
+
+static NSBundle *YTCDTLocalizationBundle(void) {
+    static NSBundle *bundle = nil;
+    static dispatch_once_t onceToken;
+
+    dispatch_once(&onceToken, ^{
+        NSString *bundlePath = YTCDTLocalizationBundlePath();
+        if (bundlePath.length > 0) {
+            bundle = [NSBundle bundleWithPath:bundlePath];
+        }
+    });
+
+    return bundle;
+}
+
+static NSString *YTCDTLocalizedText(NSString *key) {
+    NSBundle *bundle = YTCDTLocalizationBundle();
+    if (!bundle) {
+        return key;
+    }
+
+    return [bundle localizedStringForKey:key
+                                   value:key
+                                   table:nil];
 }
 
 static const NSInteger YTClassicDarkThemeSection = 'ycdt';
@@ -26,27 +79,34 @@ static const NSInteger YTClassicDarkThemeSection = 'ycdt';
 - (void)updateYTClassicDarkThemeSectionWithEntry:(id)entry;
 @end
 
-static inline NSString *ThemeModeLabel(void) {
-    switch (YTCDTThemeModeValue()) {
-        case YTCDTThemeModeClassicGray:
-            return @"Classic Gray";
-        case YTCDTThemeModeOLED:
-            return @"OLED";
-        case YTCDTThemeModeCustom:
-            return YTCDTHasCustomThemeColor() ? @"Custom" : @"Custom (No Color Saved)";
+static inline NSString *ThemeTypeLabel(void) {
+    switch (YTCDTThemeTypeValue()) {
+        case YTCDTThemeTypeCustomColor:
+            return YTCDTLocalizedText(@"SETTINGS_CUSTOM_COLOR_TITLE");
+        case YTCDTThemeTypeBuiltIn:
         default:
-            return @"Off";
+            return YTCDTLocalizedText(@"SETTINGS_BUILT_IN_TITLE");
+    }
+}
+
+static inline NSString *BuiltInStyleLabel(void) {
+    switch (YTCDTBuiltInStyleValue()) {
+        case YTCDTBuiltInStyleOLED:
+            return YTCDTLocalizedText(@"SETTINGS_OLED_TITLE");
+        case YTCDTBuiltInStyleClassicGray:
+        default:
+            return YTCDTLocalizedText(@"SETTINGS_CLASSIC_GRAY_TITLE");
     }
 }
 
 static inline NSArray<NSString *> *YTCDTCustomColorTitles(void) {
     return @[
-        @"Slate Gray",
-        @"Warm Gray",
-        @"Midnight Blue",
-        @"Deep Purple",
-        @"Olive Dark",
-        @"Charcoal"
+        YTCDTLocalizedText(@"SETTINGS_PRESET_SLATE_GRAY"),
+        YTCDTLocalizedText(@"SETTINGS_PRESET_WARM_GRAY"),
+        YTCDTLocalizedText(@"SETTINGS_PRESET_MIDNIGHT_BLUE"),
+        YTCDTLocalizedText(@"SETTINGS_PRESET_DEEP_PURPLE"),
+        YTCDTLocalizedText(@"SETTINGS_PRESET_OLIVE_DARK"),
+        YTCDTLocalizedText(@"SETTINGS_PRESET_CHARCOAL")
     ];
 }
 
@@ -61,50 +121,25 @@ static inline NSArray<UIColor *> *YTCDTCustomColorValues(void) {
     ];
 }
 
-static inline BOOL YTCDTColorComponents(UIColor *color, CGFloat *r, CGFloat *g, CGFloat *b, CGFloat *a) {
-    if (!color) {
-        return NO;
-    }
-
-    UIColor *converted = color;
-    if (![converted getRed:r green:g blue:b alpha:a]) {
-        CGFloat white = 0.0;
-        if ([converted getWhite:&white alpha:a]) {
-            *r = white;
-            *g = white;
-            *b = white;
-            return YES;
-        }
-        return NO;
-    }
-    return YES;
+static inline NSArray<NSString *> *YTCDTCustomColorIdentifiers(void) {
+    return @[
+        @"slate_gray",
+        @"warm_gray",
+        @"midnight_blue",
+        @"deep_purple",
+        @"olive_dark",
+        @"charcoal"
+    ];
 }
 
-static inline BOOL YTCDTColorsAreClose(UIColor *lhs, UIColor *rhs) {
-    CGFloat lr = 0.0, lg = 0.0, lb = 0.0, la = 0.0;
-    CGFloat rr = 0.0, rg = 0.0, rb = 0.0, ra = 0.0;
-
-    if (!YTCDTColorComponents(lhs, &lr, &lg, &lb, &la) ||
-        !YTCDTColorComponents(rhs, &rr, &rg, &rb, &ra)) {
-        return NO;
-    }
-
-    CGFloat epsilon = 0.01;
-    return fabs(lr - rr) < epsilon &&
-           fabs(lg - rg) < epsilon &&
-           fabs(lb - rb) < epsilon &&
-           fabs(la - ra) < epsilon;
-}
-
-static inline NSInteger YTCDTSelectedCustomColorIndex(void) {
-    UIColor *currentColor = YTCDTCustomThemeColor();
-    if (!currentColor) {
+static inline NSInteger YTCDTCustomPresetIndexForIdentifier(NSString *identifier) {
+    if (![identifier isKindOfClass:[NSString class]] || identifier.length == 0) {
         return NSNotFound;
     }
 
-    NSArray<UIColor *> *presetColors = YTCDTCustomColorValues();
-    for (NSUInteger i = 0; i < presetColors.count; i++) {
-        if (YTCDTColorsAreClose(currentColor, presetColors[i])) {
+    NSArray<NSString *> *identifiers = YTCDTCustomColorIdentifiers();
+    for (NSUInteger i = 0; i < identifiers.count; i++) {
+        if ([identifiers[i] isEqualToString:identifier]) {
             return (NSInteger)i;
         }
     }
@@ -112,32 +147,34 @@ static inline NSInteger YTCDTSelectedCustomColorIndex(void) {
     return NSNotFound;
 }
 
-static inline NSString *CustomColorStatusLabel(void) {
-    if (YTCDTThemeModeValue() != YTCDTThemeModeCustom) {
-        return @"Off";
-    }
-
-    if (!YTCDTHasCustomThemeColor()) {
-        return @"None";
-    }
-
-    NSInteger selectedIndex = YTCDTSelectedCustomColorIndex();
+static inline NSString *YTCDTCustomColorTitleForIdentifier(NSString *identifier) {
+    NSInteger index = YTCDTCustomPresetIndexForIdentifier(identifier);
     NSArray<NSString *> *titles = YTCDTCustomColorTitles();
 
-    if (selectedIndex != NSNotFound && selectedIndex < (NSInteger)titles.count) {
-        return titles[(NSUInteger)selectedIndex];
+    if (index == NSNotFound || index >= (NSInteger)titles.count) {
+        return nil;
     }
 
-    return @"HEX";
+    return titles[(NSUInteger)index];
+}
+
+static inline NSString *CustomColorStatusLabel(void) {
+    if (YTCDTCustomColorSourceValue() == YTCDTCustomColorSourceHex) {
+        return YTCDTLocalizedText(@"SETTINGS_HEX_TITLE");
+    }
+
+    NSString *identifier = YTCDTCustomPresetIdentifier();
+    NSString *title = YTCDTCustomColorTitleForIdentifier(identifier);
+    return title ?: YTCDTLocalizedText(@"SETTINGS_STATUS_NONE");
 }
 
 static inline void YTCDTPresentInvalidHexAlert(UIViewController *presenter) {
     UIAlertController *alert =
-        [UIAlertController alertControllerWithTitle:@"Invalid HEX Color"
-                                            message:@"Use #RRGGBB or RRGGBB."
+        [UIAlertController alertControllerWithTitle:YTCDTLocalizedText(@"ALERT_INVALID_HEX_TITLE")
+                                            message:YTCDTLocalizedText(@"ALERT_INVALID_HEX_MESSAGE")
                                      preferredStyle:UIAlertControllerStyleAlert];
 
-    [alert addAction:[UIAlertAction actionWithTitle:@"OK"
+    [alert addAction:[UIAlertAction actionWithTitle:YTCDTLocalizedText(@"ALERT_OK")
                                               style:UIAlertActionStyleDefault
                                             handler:nil]];
 
@@ -152,13 +189,13 @@ static inline void YTCDTPresentHexColorAlert(YTSettingsViewController *delegate)
     UIViewController *presenter = (UIViewController *)delegate;
 
     UIAlertController *alert =
-        [UIAlertController alertControllerWithTitle:@"HEX"
-                                            message:@"Enter #RRGGBB or RRGGBB. Saving also sets Mode to Custom."
+        [UIAlertController alertControllerWithTitle:YTCDTLocalizedText(@"ALERT_HEX_TITLE")
+                                            message:YTCDTLocalizedText(@"ALERT_HEX_MESSAGE")
                                      preferredStyle:UIAlertControllerStyleAlert];
 
     [alert addTextFieldWithConfigurationHandler:^(UITextField *textField) {
-        textField.placeholder = @"#1E1E1E";
-        textField.text = YTCDTCustomThemeColorHexString();
+        textField.placeholder = YTCDTLocalizedText(@"ALERT_HEX_PLACEHOLDER");
+        textField.text = YTCDTSavedHexColorString();
         textField.autocorrectionType = UITextAutocorrectionTypeNo;
         textField.autocapitalizationType = UITextAutocapitalizationTypeAllCharacters;
         textField.clearButtonMode = UITextFieldViewModeWhileEditing;
@@ -167,11 +204,11 @@ static inline void YTCDTPresentHexColorAlert(YTSettingsViewController *delegate)
     __weak UIAlertController *weakAlert = alert;
     __weak UIViewController *weakPresenter = presenter;
 
-    [alert addAction:[UIAlertAction actionWithTitle:@"Cancel"
+    [alert addAction:[UIAlertAction actionWithTitle:YTCDTLocalizedText(@"ALERT_CANCEL")
                                               style:UIAlertActionStyleCancel
                                             handler:nil]];
 
-    [alert addAction:[UIAlertAction actionWithTitle:@"Save"
+    [alert addAction:[UIAlertAction actionWithTitle:YTCDTLocalizedText(@"ALERT_SAVE")
                                               style:UIAlertActionStyleDefault
                                             handler:^(__unused UIAlertAction *action) {
         NSString *input = weakAlert.textFields.firstObject.text;
@@ -183,7 +220,9 @@ static inline void YTCDTPresentHexColorAlert(YTSettingsViewController *delegate)
             return;
         }
 
-        YTCDTSetThemeMode(YTCDTThemeModeCustom);
+        YTCDTSetThemeType(YTCDTThemeTypeCustomColor);
+        YTCDTSetCustomColorSource(YTCDTCustomColorSourceHex);
+        YTCDTClearCustomPresetIdentifier();
 
         if ([delegate respondsToSelector:@selector(reloadData)]) {
             [delegate reloadData];
@@ -257,26 +296,41 @@ static inline void YTCDTPresentHexColorAlert(YTSettingsViewController *delegate)
 
     NSMutableArray *sectionItems = [NSMutableArray array];
 
-    YTSettingsSectionItem *modeItem =
-        [%c(YTSettingsSectionItem) itemWithTitle:@"Mode"
-                                titleDescription:@"Restart YouTube after changing theme"
-                         accessibilityIdentifier:@"YTClassicDarkThemeMode"
+    SECTION_HEADER(YTCDTLocalizedText(@"SETTINGS_RESTART_REQUIRED_HEADER"));
+
+    YTSettingsSectionItem *enableThemeItem =
+        [%c(YTSettingsSectionItem) switchItemWithTitle:YTCDTLocalizedText(@"SETTINGS_ENABLE_THEME_TITLE")
+                                      titleDescription:YTCDTLocalizedText(@"SETTINGS_ENABLE_THEME_DESCRIPTION")
+                               accessibilityIdentifier:@"YTClassicDarkThemeEnabled"
+                                              switchOn:YTCDTEnabled()
+                                           switchBlock:^BOOL (YTSettingsCell *cell, BOOL enabled) {
+                                               YTCDTSetEnabled(enabled);
+
+                                               if ([delegate respondsToSelector:@selector(reloadData)]) {
+                                                   [delegate reloadData];
+                                               }
+
+                                               return YES;
+                                           }
+                                         settingItemId:0];
+    [sectionItems addObject:enableThemeItem];
+
+    YTSettingsSectionItem *themeTypeItem =
+        [%c(YTSettingsSectionItem) itemWithTitle:YTCDTLocalizedText(@"SETTINGS_THEME_TYPE_TITLE")
+                                titleDescription:YTCDTLocalizedText(@"SETTINGS_THEME_TYPE_DESCRIPTION")
+                         accessibilityIdentifier:@"YTClassicDarkThemeThemeType"
                                  detailTextBlock:^NSString *{
-                                     return ThemeModeLabel();
+                                     return ThemeTypeLabel();
                                  }
                                      selectBlock:^BOOL (YTSettingsCell *cell, NSUInteger arg1) {
                                          NSArray<NSString *> *titles = @[
-                                             @"Off",
-                                             @"Classic Gray",
-                                             @"OLED",
-                                             @"Custom"
+                                             YTCDTLocalizedText(@"SETTINGS_BUILT_IN_TITLE"),
+                                             YTCDTLocalizedText(@"SETTINGS_CUSTOM_COLOR_TITLE")
                                          ];
 
                                          NSArray<NSString *> *descriptions = @[
-                                             @"Disable the theme",
-                                             @"Restore the classic gray dark theme",
-                                             @"Use pure black OLED dark mode",
-                                             YTCDTHasCustomThemeColor() ? @"Use saved custom color" : @"No custom color saved yet"
+                                             YTCDTLocalizedText(@"SETTINGS_THEME_TYPE_BUILT_IN_DESCRIPTION"),
+                                             YTCDTLocalizedText(@"SETTINGS_THEME_TYPE_CUSTOM_COLOR_DESCRIPTION")
                                          ];
 
                                          NSMutableArray *rows = [NSMutableArray array];
@@ -289,74 +343,114 @@ static inline void YTCDTPresentHexColorAlert(YTSettingsViewController *delegate)
                                                  [%c(YTSettingsSectionItem) checkmarkItemWithTitle:title
                                                                                   titleDescription:desc
                                                                                        selectBlock:^BOOL (YTSettingsCell *pickerCell, NSUInteger arg2) {
-                                                                                          if (i == YTCDTThemeModeCustom && !YTCDTHasCustomThemeColor()) {
-                                                                                              return YES;
-                                                                                          }
+                                                                                           YTCDTSetThemeType((YTCDTThemeType)i);
 
-                                                                                          YTCDTSetThemeMode((YTCDTThemeMode)i);
+                                                                                           if ([delegate respondsToSelector:@selector(reloadData)]) {
+                                                                                               [delegate reloadData];
+                                                                                           }
 
-                                                                                          if ([delegate respondsToSelector:@selector(reloadData)]) {
-                                                                                              [delegate reloadData];
-                                                                                          }
-
-                                                                                          return YES;
-                                                                                      }];
+                                                                                           return YES;
+                                                                                       }];
                                              [rows addObject:row];
                                          }
 
                                          YTSettingsPickerViewController *picker =
                                              [[%c(YTSettingsPickerViewController) alloc]
-                                                 initWithNavTitle:@"Classic Dark Theme"
-                                                 pickerSectionTitle:@"Mode"
+                                                 initWithNavTitle:YTCDTLocalizedText(@"SETTINGS_SECTION_TITLE")
+                                                 pickerSectionTitle:YTCDTLocalizedText(@"SETTINGS_THEME_TYPE_PICKER_TITLE")
                                                  rows:rows
-                                                 selectedItemIndex:YTCDTThemeModeValue()
+                                                 selectedItemIndex:YTCDTThemeTypeValue()
                                                  parentResponder:delegate];
 
                                          [delegate pushViewController:picker];
                                          return YES;
                                      }];
-    [sectionItems addObject:modeItem];
+    [sectionItems addObject:themeTypeItem];
+
+    SECTION_HEADER(YTCDTLocalizedText(@"SETTINGS_APPEARANCE_HEADER"));
+
+    YTSettingsSectionItem *builtInStyleItem =
+        [%c(YTSettingsSectionItem) itemWithTitle:YTCDTLocalizedText(@"SETTINGS_BUILT_IN_STYLE_TITLE")
+                                titleDescription:YTCDTLocalizedText(@"SETTINGS_BUILT_IN_STYLE_DESCRIPTION")
+                         accessibilityIdentifier:@"YTClassicDarkThemeBuiltInStyle"
+                                 detailTextBlock:^NSString *{
+                                     return BuiltInStyleLabel();
+                                 }
+                                     selectBlock:^BOOL (YTSettingsCell *cell, NSUInteger arg1) {
+                                         NSArray<NSString *> *titles = @[
+                                             YTCDTLocalizedText(@"SETTINGS_CLASSIC_GRAY_TITLE"),
+                                             YTCDTLocalizedText(@"SETTINGS_OLED_TITLE")
+                                         ];
+
+                                         NSArray<NSString *> *descriptions = @[
+                                             YTCDTLocalizedText(@"SETTINGS_CLASSIC_GRAY_DESCRIPTION"),
+                                             YTCDTLocalizedText(@"SETTINGS_OLED_DESCRIPTION")
+                                         ];
+
+                                         NSMutableArray *rows = [NSMutableArray array];
+
+                                         for (NSUInteger i = 0; i < titles.count; i++) {
+                                             NSString *title = titles[i];
+                                             NSString *desc = descriptions[i];
+
+                                             YTSettingsSectionItem *row =
+                                                 [%c(YTSettingsSectionItem) checkmarkItemWithTitle:title
+                                                                                  titleDescription:desc
+                                                                                       selectBlock:^BOOL (YTSettingsCell *pickerCell, NSUInteger arg2) {
+                                                                                           YTCDTSetThemeType(YTCDTThemeTypeBuiltIn);
+                                                                                           YTCDTSetBuiltInStyle((YTCDTBuiltInStyle)i);
+
+                                                                                           if ([delegate respondsToSelector:@selector(reloadData)]) {
+                                                                                               [delegate reloadData];
+                                                                                           }
+
+                                                                                           return YES;
+                                                                                       }];
+                                             [rows addObject:row];
+                                         }
+
+                                         YTSettingsPickerViewController *picker =
+                                             [[%c(YTSettingsPickerViewController) alloc]
+                                                 initWithNavTitle:YTCDTLocalizedText(@"SETTINGS_SECTION_TITLE")
+                                                 pickerSectionTitle:YTCDTLocalizedText(@"SETTINGS_BUILT_IN_STYLE_PICKER_TITLE")
+                                                 rows:rows
+                                                 selectedItemIndex:YTCDTBuiltInStyleValue()
+                                                 parentResponder:delegate];
+
+                                         [delegate pushViewController:picker];
+                                         return YES;
+                                     }];
+    [sectionItems addObject:builtInStyleItem];
 
     YTSettingsSectionItem *customColorItem =
-        [%c(YTSettingsSectionItem) itemWithTitle:@"Custom Color"
-                                titleDescription:@"Off, HEX, and preset colors. Selecting a color also sets Mode to Custom"
+        [%c(YTSettingsSectionItem) itemWithTitle:YTCDTLocalizedText(@"SETTINGS_CUSTOM_COLOR_TITLE")
+                                titleDescription:YTCDTLocalizedText(@"SETTINGS_CUSTOM_COLOR_DESCRIPTION")
                          accessibilityIdentifier:@"YTClassicDarkThemeCustomColor"
                                  detailTextBlock:^NSString *{
                                      return CustomColorStatusLabel();
                                  }
                                      selectBlock:^BOOL (YTSettingsCell *cell, NSUInteger arg1) {
                                          NSArray<NSString *> *titles = YTCDTCustomColorTitles();
+                                         NSArray<NSString *> *identifiers = YTCDTCustomColorIdentifiers();
                                          NSArray<UIColor *> *colors = YTCDTCustomColorValues();
-                                         NSInteger selectedIndex = YTCDTSelectedCustomColorIndex();
                                          NSString *savedHex = YTCDTSavedHexColorString();
+                                         NSString *presetIdentifier = YTCDTCustomPresetIdentifier();
 
                                          NSMutableArray *rows = [NSMutableArray array];
 
-                                         YTSettingsSectionItem *offRow =
-                                             [%c(YTSettingsSectionItem) checkmarkItemWithTitle:@"Off"
-                                                                             titleDescription:@"Set Custom Color to Off and keep the saved custom color"
-                                                                                  selectBlock:^BOOL (YTSettingsCell *pickerCell, NSUInteger arg2) {
-                                                                                      YTCDTSetThemeMode(YTCDTThemeModeOff);
-
-                                                                                      if ([delegate respondsToSelector:@selector(reloadData)]) {
-                                                                                          [delegate reloadData];
-                                                                                      }
-
-                                                                                      return YES;
-                                                                                  }];
-                                         [rows addObject:offRow];
-
                                          NSString *hexDescription =
                                              savedHex
-                                                 ? [NSString stringWithFormat:@"Use saved HEX color (%@)", savedHex]
-                                                 : @"No saved HEX color";
+                                                 ? [NSString stringWithFormat:YTCDTLocalizedText(@"SETTINGS_HEX_DESCRIPTION_FORMAT"), savedHex]
+                                                 : YTCDTLocalizedText(@"SETTINGS_HEX_DESCRIPTION_NONE");
 
                                          YTSettingsSectionItem *hexRow =
-                                             [%c(YTSettingsSectionItem) checkmarkItemWithTitle:@"HEX"
-                                                                             titleDescription:hexDescription
+                                             [%c(YTSettingsSectionItem) checkmarkItemWithTitle:YTCDTLocalizedText(@"SETTINGS_HEX_TITLE")
+                                                                              titleDescription:hexDescription
                                                                                   selectBlock:^BOOL (YTSettingsCell *pickerCell, NSUInteger arg2) {
                                                                                       if (YTCDTActivateSavedHexColor()) {
-                                                                                          YTCDTSetThemeMode(YTCDTThemeModeCustom);
+                                                                                          YTCDTSetThemeType(YTCDTThemeTypeCustomColor);
+                                                                                          YTCDTSetCustomColorSource(YTCDTCustomColorSourceHex);
+                                                                                          YTCDTClearCustomPresetIdentifier();
 
                                                                                           if ([delegate respondsToSelector:@selector(reloadData)]) {
                                                                                               [delegate reloadData];
@@ -369,38 +463,42 @@ static inline void YTCDTPresentHexColorAlert(YTSettingsViewController *delegate)
 
                                          for (NSUInteger i = 0; i < titles.count; i++) {
                                              NSString *title = titles[i];
+                                             NSString *identifier = identifiers[i];
                                              UIColor *color = colors[i];
 
                                              YTSettingsSectionItem *row =
                                                  [%c(YTSettingsSectionItem) checkmarkItemWithTitle:title
-                                                                                 titleDescription:@"Apply after restarting YouTube"
-                                                                                      selectBlock:^BOOL (YTSettingsCell *pickerCell, NSUInteger arg2) {
-                                                                                          YTCDTSetCustomThemeColor(color);
-                                                                                          YTCDTSetThemeMode(YTCDTThemeModeCustom);
+                                                                                  titleDescription:YTCDTLocalizedText(@"SETTINGS_PRESET_APPLY_DESCRIPTION")
+                                                                                       selectBlock:^BOOL (YTSettingsCell *pickerCell, NSUInteger arg2) {
+                                                                                           YTCDTSetThemeType(YTCDTThemeTypeCustomColor);
+                                                                                           YTCDTSetCustomColorSource(YTCDTCustomColorSourcePreset);
+                                                                                           YTCDTSetCustomPresetIdentifier(identifier);
+                                                                                           YTCDTSetCustomThemeColor(color);
 
-                                                                                          if ([delegate respondsToSelector:@selector(reloadData)]) {
-                                                                                              [delegate reloadData];
-                                                                                          }
+                                                                                           if ([delegate respondsToSelector:@selector(reloadData)]) {
+                                                                                               [delegate reloadData];
+                                                                                           }
 
-                                                                                          return YES;
-                                                                                      }];
+                                                                                           return YES;
+                                                                                       }];
                                              [rows addObject:row];
                                          }
 
                                          NSUInteger pickerSelectedIndex = NSNotFound;
 
-                                         if (YTCDTThemeModeValue() != YTCDTThemeModeCustom) {
+                                         if (YTCDTCustomColorSourceValue() == YTCDTCustomColorSourceHex) {
                                              pickerSelectedIndex = 0;
-                                         } else if (selectedIndex == NSNotFound && YTCDTHasCustomThemeColor()) {
-                                             pickerSelectedIndex = 1;
-                                         } else if (selectedIndex != NSNotFound) {
-                                             pickerSelectedIndex = (NSUInteger)(selectedIndex + 2);
+                                         } else {
+                                             NSInteger presetIndex = YTCDTCustomPresetIndexForIdentifier(presetIdentifier);
+                                             if (presetIndex != NSNotFound) {
+                                                 pickerSelectedIndex = (NSUInteger)(presetIndex + 1);
+                                             }
                                          }
 
                                          YTSettingsPickerViewController *picker =
                                              [[%c(YTSettingsPickerViewController) alloc]
-                                                 initWithNavTitle:@"Classic Dark Theme"
-                                                 pickerSectionTitle:@"Custom Color"
+                                                 initWithNavTitle:YTCDTLocalizedText(@"SETTINGS_SECTION_TITLE")
+                                                 pickerSectionTitle:YTCDTLocalizedText(@"SETTINGS_CUSTOM_COLOR_PICKER_TITLE")
                                                  rows:rows
                                                  selectedItemIndex:pickerSelectedIndex
                                                  parentResponder:delegate];
@@ -411,12 +509,12 @@ static inline void YTCDTPresentHexColorAlert(YTSettingsViewController *delegate)
     [sectionItems addObject:customColorItem];
 
     YTSettingsSectionItem *editHexItem =
-        [%c(YTSettingsSectionItem) itemWithTitle:@"Edit HEX"
-                                titleDescription:@"Enter or update #RRGGBB manually"
+        [%c(YTSettingsSectionItem) itemWithTitle:YTCDTLocalizedText(@"SETTINGS_EDIT_HEX_TITLE")
+                                titleDescription:YTCDTLocalizedText(@"SETTINGS_EDIT_HEX_DESCRIPTION")
                          accessibilityIdentifier:@"YTClassicDarkThemeEditHexColor"
                                  detailTextBlock:^NSString *{
-                                     NSString *savedHex = YTCDTCustomThemeColorHexString();
-                                     return savedHex ?: @"None";
+                                     NSString *savedHex = YTCDTSavedHexColorString();
+                                     return savedHex ?: YTCDTLocalizedText(@"SETTINGS_STATUS_NONE");
                                  }
                                      selectBlock:^BOOL (YTSettingsCell *cell, NSUInteger arg1) {
                                          YTCDTPresentHexColorAlert(delegate);
@@ -424,9 +522,11 @@ static inline void YTCDTPresentHexColorAlert(YTSettingsViewController *delegate)
                                      }];
     [sectionItems addObject:editHexItem];
 
+    SECTION_HEADER(YTCDTLocalizedText(@"SETTINGS_OPTIONS_HEADER"));
+
     YTSettingsSectionItem *removeRoundedCornersItem =
-        [%c(YTSettingsSectionItem) switchItemWithTitle:@"Remove Rounded Corners"
-                                      titleDescription:@"Remove the rounded corners below the player. Restart YouTube after changing this setting"
+        [%c(YTSettingsSectionItem) switchItemWithTitle:YTCDTLocalizedText(@"SETTINGS_REMOVE_ROUNDED_CORNERS_TITLE")
+                                      titleDescription:YTCDTLocalizedText(@"SETTINGS_REMOVE_ROUNDED_CORNERS_DESCRIPTION")
                                accessibilityIdentifier:@"YTClassicDarkThemeRemoveRoundedCorners"
                                               switchOn:YTCDTRemoveRoundedCornersEnabled()
                                            switchBlock:^BOOL (YTSettingsCell *cell, BOOL enabled) {
@@ -442,8 +542,8 @@ static inline void YTCDTPresentHexColorAlert(YTSettingsViewController *delegate)
     [sectionItems addObject:removeRoundedCornersItem];
 
     YTSettingsSectionItem *keyboardItem =
-        [%c(YTSettingsSectionItem) switchItemWithTitle:@"OLED Keyboard"
-                                      titleDescription:@"Restart YouTube after changing keyboard setting"
+        [%c(YTSettingsSectionItem) switchItemWithTitle:YTCDTLocalizedText(@"SETTINGS_OLED_KEYBOARD_TITLE")
+                                      titleDescription:YTCDTLocalizedText(@"SETTINGS_OLED_KEYBOARD_DESCRIPTION")
                                accessibilityIdentifier:@"YTClassicDarkThemeOLEDKeyboard"
                                               switchOn:YTCDTOLEDKeyboardEnabled()
                                            switchBlock:^BOOL (YTSettingsCell *cell, BOOL enabled) {
@@ -459,7 +559,7 @@ static inline void YTCDTPresentHexColorAlert(YTSettingsViewController *delegate)
     [sectionItems addObject:keyboardItem];
 
     YTSettingsSectionItem *versionItem =
-        [%c(YTSettingsSectionItem) itemWithTitle:@"Version"
+        [%c(YTSettingsSectionItem) itemWithTitle:YTCDTLocalizedText(@"SETTINGS_VERSION_TITLE")
                                 titleDescription:nil
                          accessibilityIdentifier:@"YTClassicDarkThemeVersion"
                                  detailTextBlock:^NSString *{
@@ -476,14 +576,14 @@ static inline void YTCDTPresentHexColorAlert(YTSettingsViewController *delegate)
 
         [delegate setSectionItems:sectionItems
                       forCategory:YTClassicDarkThemeSection
-                            title:@"Classic Dark Theme"
+                            title:YTCDTLocalizedText(@"SETTINGS_SECTION_TITLE")
                              icon:icon
                  titleDescription:nil
                      headerHidden:NO];
     } else {
         [delegate setSectionItems:sectionItems
                       forCategory:YTClassicDarkThemeSection
-                            title:@"Classic Dark Theme"
+                            title:YTCDTLocalizedText(@"SETTINGS_SECTION_TITLE")
                  titleDescription:nil
                      headerHidden:NO];
     }

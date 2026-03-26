@@ -1,10 +1,16 @@
 #import "YTCDTPrefs.h"
 
-static NSString * const kYTCDTThemeModeKey = @"classicDarkTheme_mode";
-static NSString * const kYTCDTOLEDKeyboardKey = @"classicDarkTheme_oledKeyboard";
-static NSString * const kYTCDTRemoveRoundedCornersKey = @"classicDarkTheme_removeRoundedCorners";
+static NSString * const kYTCDTEnabledKey = @"classicDarkTheme_enabled";
+static NSString * const kYTCDTThemeTypeKey = @"classicDarkTheme_themeType";
+static NSString * const kYTCDTBuiltInStyleKey = @"classicDarkTheme_builtInStyle";
+static NSString * const kYTCDTCustomColorSourceKey = @"classicDarkTheme_customColorSource";
+
 static NSString * const kYTCDTCustomColorKey = @"classicDarkTheme_customColor";
 static NSString * const kYTCDTSavedHexColorKey = @"classicDarkTheme_savedHexColor";
+static NSString * const kYTCDTCustomPresetIdentifierKey = @"classicDarkTheme_customPresetIdentifier";
+
+static NSString * const kYTCDTOLEDKeyboardKey = @"classicDarkTheme_oledKeyboard";
+static NSString * const kYTCDTRemoveRoundedCornersKey = @"classicDarkTheme_removeRoundedCorners";
 
 static inline NSUserDefaults *YTCDTDefaults(void) {
     return [NSUserDefaults standardUserDefaults];
@@ -105,16 +111,40 @@ static BOOL YTCDTStoreCustomThemeColor(UIColor *color) {
     return YES;
 }
 
-YTCDTThemeMode YTCDTThemeModeValue(void) {
-    return (YTCDTThemeMode)[YTCDTDefaults() integerForKey:kYTCDTThemeModeKey];
+BOOL YTCDTEnabled(void) {
+    return [YTCDTDefaults() boolForKey:kYTCDTEnabledKey];
 }
 
-BOOL YTCDTOLEDKeyboardEnabled(void) {
-    return [YTCDTDefaults() boolForKey:kYTCDTOLEDKeyboardKey];
+void YTCDTSetEnabled(BOOL enabled) {
+    [YTCDTDefaults() setBool:enabled forKey:kYTCDTEnabledKey];
+    [YTCDTDefaults() synchronize];
 }
 
-BOOL YTCDTRemoveRoundedCornersEnabled(void) {
-    return [YTCDTDefaults() boolForKey:kYTCDTRemoveRoundedCornersKey];
+YTCDTThemeType YTCDTThemeTypeValue(void) {
+    return (YTCDTThemeType)[YTCDTDefaults() integerForKey:kYTCDTThemeTypeKey];
+}
+
+void YTCDTSetThemeType(YTCDTThemeType themeType) {
+    [YTCDTDefaults() setInteger:themeType forKey:kYTCDTThemeTypeKey];
+    [YTCDTDefaults() synchronize];
+}
+
+YTCDTBuiltInStyle YTCDTBuiltInStyleValue(void) {
+    return (YTCDTBuiltInStyle)[YTCDTDefaults() integerForKey:kYTCDTBuiltInStyleKey];
+}
+
+void YTCDTSetBuiltInStyle(YTCDTBuiltInStyle builtInStyle) {
+    [YTCDTDefaults() setInteger:builtInStyle forKey:kYTCDTBuiltInStyleKey];
+    [YTCDTDefaults() synchronize];
+}
+
+YTCDTCustomColorSource YTCDTCustomColorSourceValue(void) {
+    return (YTCDTCustomColorSource)[YTCDTDefaults() integerForKey:kYTCDTCustomColorSourceKey];
+}
+
+void YTCDTSetCustomColorSource(YTCDTCustomColorSource source) {
+    [YTCDTDefaults() setInteger:source forKey:kYTCDTCustomColorSourceKey];
+    [YTCDTDefaults() synchronize];
 }
 
 BOOL YTCDTHasCustomThemeColor(void) {
@@ -141,49 +171,6 @@ UIColor *YTCDTCustomThemeColor(void) {
 
 NSString *YTCDTCustomThemeColorHexString(void) {
     return YTCDTHexStringFromColor(YTCDTCustomThemeColor());
-}
-
-BOOL YTCDTHasSavedHexColor(void) {
-    return [YTCDTDefaults() objectForKey:kYTCDTSavedHexColorKey] != nil;
-}
-
-NSString *YTCDTSavedHexColorString(void) {
-    NSString *savedHex = [YTCDTDefaults() stringForKey:kYTCDTSavedHexColorKey];
-    return YTCDTNormalizedHexString(savedHex);
-}
-
-BOOL YTCDTActivateSavedHexColor(void) {
-    NSString *savedHex = YTCDTSavedHexColorString();
-    if (!savedHex) {
-        return NO;
-    }
-
-    UIColor *color = YTCDTColorFromHexString(savedHex);
-    if (!color) {
-        return NO;
-    }
-
-    if (!YTCDTStoreCustomThemeColor(color)) {
-        return NO;
-    }
-
-    [YTCDTDefaults() synchronize];
-    return YES;
-}
-
-void YTCDTSetThemeMode(YTCDTThemeMode mode) {
-    [YTCDTDefaults() setInteger:mode forKey:kYTCDTThemeModeKey];
-    [YTCDTDefaults() synchronize];
-}
-
-void YTCDTSetOLEDKeyboardEnabled(BOOL enabled) {
-    [YTCDTDefaults() setBool:enabled forKey:kYTCDTOLEDKeyboardKey];
-    [YTCDTDefaults() synchronize];
-}
-
-void YTCDTSetRemoveRoundedCornersEnabled(BOOL enabled) {
-    [YTCDTDefaults() setBool:enabled forKey:kYTCDTRemoveRoundedCornersKey];
-    [YTCDTDefaults() synchronize];
 }
 
 void YTCDTSetCustomThemeColor(UIColor *color) {
@@ -219,5 +206,79 @@ BOOL YTCDTSetCustomThemeColorFromHexString(NSString *hexString) {
 
 void YTCDTClearCustomThemeColor(void) {
     [YTCDTDefaults() removeObjectForKey:kYTCDTCustomColorKey];
+    [YTCDTDefaults() synchronize];
+}
+
+BOOL YTCDTHasSavedHexColor(void) {
+    return [YTCDTDefaults() objectForKey:kYTCDTSavedHexColorKey] != nil;
+}
+
+NSString *YTCDTSavedHexColorString(void) {
+    NSString *savedHex = [YTCDTDefaults() stringForKey:kYTCDTSavedHexColorKey];
+    return YTCDTNormalizedHexString(savedHex);
+}
+
+BOOL YTCDTActivateSavedHexColor(void) {
+    NSString *savedHex = YTCDTSavedHexColorString();
+    if (!savedHex) {
+        return NO;
+    }
+
+    UIColor *color = YTCDTColorFromHexString(savedHex);
+    if (!color) {
+        return NO;
+    }
+
+    if (!YTCDTStoreCustomThemeColor(color)) {
+        return NO;
+    }
+
+    [YTCDTDefaults() synchronize];
+    return YES;
+}
+
+BOOL YTCDTHasCustomPresetIdentifier(void) {
+    return YTCDTCustomPresetIdentifier() != nil;
+}
+
+NSString *YTCDTCustomPresetIdentifier(void) {
+    NSString *identifier = [YTCDTDefaults() stringForKey:kYTCDTCustomPresetIdentifierKey];
+    if (![identifier isKindOfClass:[NSString class]] || identifier.length == 0) {
+        return nil;
+    }
+
+    return identifier;
+}
+
+void YTCDTSetCustomPresetIdentifier(NSString *identifier) {
+    if (![identifier isKindOfClass:[NSString class]] || identifier.length == 0) {
+        YTCDTClearCustomPresetIdentifier();
+        return;
+    }
+
+    [YTCDTDefaults() setObject:identifier forKey:kYTCDTCustomPresetIdentifierKey];
+    [YTCDTDefaults() synchronize];
+}
+
+void YTCDTClearCustomPresetIdentifier(void) {
+    [YTCDTDefaults() removeObjectForKey:kYTCDTCustomPresetIdentifierKey];
+    [YTCDTDefaults() synchronize];
+}
+
+BOOL YTCDTOLEDKeyboardEnabled(void) {
+    return [YTCDTDefaults() boolForKey:kYTCDTOLEDKeyboardKey];
+}
+
+void YTCDTSetOLEDKeyboardEnabled(BOOL enabled) {
+    [YTCDTDefaults() setBool:enabled forKey:kYTCDTOLEDKeyboardKey];
+    [YTCDTDefaults() synchronize];
+}
+
+BOOL YTCDTRemoveRoundedCornersEnabled(void) {
+    return [YTCDTDefaults() boolForKey:kYTCDTRemoveRoundedCornersKey];
+}
+
+void YTCDTSetRemoveRoundedCornersEnabled(BOOL enabled) {
+    [YTCDTDefaults() setBool:enabled forKey:kYTCDTRemoveRoundedCornersKey];
     [YTCDTDefaults() synchronize];
 }
