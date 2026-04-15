@@ -63,6 +63,13 @@
 "SETTINGS_OLED_KEYBOARD_TITLE" = "OLED Keyboard";
 "SETTINGS_OLED_KEYBOARD_DESCRIPTION" = "Enable OLED keyboard";
 
+"SETTINGS_WATCH_UI_HEADER" = "Watch UI";
+
+"SETTINGS_DISABLE_PULL_TO_FULL_TITLE" = "Disable pull-to-fullscreen gesture";
+"SETTINGS_DISABLE_PULL_TO_FULL_DESCRIPTION" = "Prevents dragging to enter fullscreen for landscape videos.";
+"SETTINGS_HIDE_COMMENT_PREVIEW_TITLE" = "Hide comment preview";
+"SETTINGS_HIDE_COMMENT_PREVIEW_DESCRIPTION" = "Hides the comment preview under the video player.";
+
 "SETTINGS_VERSION_TITLE" = "Version";
 
 "SETTINGS_SECTION_TITLE" = "Classic Dark Theme";

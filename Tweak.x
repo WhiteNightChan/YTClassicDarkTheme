@@ -6,6 +6,8 @@ static YTCDTThemeType cachedThemeType = YTCDTThemeTypeBuiltIn;
 static YTCDTBuiltInStyle cachedBuiltInStyle = YTCDTBuiltInStyleClassicGray;
 static BOOL cachedOLEDKeyboardEnabled = NO;
 static BOOL cachedRemoveRoundedCornersEnabled = NO;
+static BOOL cachedDisablePullToFullEnabled = NO;
+static BOOL cachedHidePreviewCommentSectionEnabled = NO;
 static UIColor *customThemeColor = nil;
 
 static inline BOOL isBuiltInThemeEnabled() {
@@ -432,6 +434,27 @@ static inline BOOL isGonerinoListViewController(id object) {
 - (void)didMoveToWindow {
     %orig;
 
+    NSString *identifier = self.accessibilityIdentifier;
+
+    if (cachedHidePreviewCommentSectionEnabled &&
+        [identifier isEqualToString:@"id.ui.comments_entry_point_teaser"]) {
+        self.hidden = YES;
+        self.opaque = YES;
+        self.userInteractionEnabled = NO;
+
+        CGRect frame = self.frame;
+        frame.size.height = 0;
+        self.frame = frame;
+
+        if (self.superview) {
+            [self.superview layoutIfNeeded];
+        }
+
+        [self setNeedsLayout];
+        [self removeFromSuperview];
+        return;
+    }
+
     if (!shouldApplyYTCDTTheme()) {
         return;
     }
@@ -449,7 +472,6 @@ static inline BOOL isGonerinoListViewController(id object) {
 
     NSString *controllerName = closestViewController ? NSStringFromClass([closestViewController class]) : nil;
     NSString *superviewName = self.superview ? NSStringFromClass([self.superview class]) : nil;
-    NSString *identifier = self.accessibilityIdentifier;
 
     if ([controllerName isEqualToString:@"YTActionSheetDialogViewController"] &&
         ([superviewName isEqualToString:@"YTELMView"] ||
@@ -621,15 +643,52 @@ static inline BOOL isGonerinoListViewController(id object) {
 
 %end
 
+%group gWatchUIOptions
+
+%hook YTWatchPullToFullController
+- (BOOL)shouldRecognizeOverscrollEventsFromWatchOverscrollController:(id)arg1 {
+    if (!cachedDisablePullToFullEnabled) {
+        return %orig;
+    }
+
+    id playerViewSource = nil;
+    @try {
+        playerViewSource = [self playerViewSource];
+    } @catch (__unused NSException *exception) {
+        playerViewSource = nil;
+    }
+
+    if (![playerViewSource respondsToSelector:@selector(allowedFullScreenOrientations)]) {
+        return %orig;
+    }
+
+    NSUInteger allowedFullScreenOrientations =
+        (NSUInteger)[(YTWatchViewController *)playerViewSource allowedFullScreenOrientations];
+
+    if (allowedFullScreenOrientations == UIInterfaceOrientationMaskAllButUpsideDown ||
+        allowedFullScreenOrientations == UIInterfaceOrientationMaskPortrait ||
+        allowedFullScreenOrientations == UIInterfaceOrientationMaskPortraitUpsideDown) {
+        return %orig;
+    }
+
+    return NO;
+}
+%end
+
+%end
+
 %ctor {
     cachedEnabled = YTCDTEnabled();
     cachedThemeType = YTCDTThemeTypeValue();
     cachedBuiltInStyle = YTCDTBuiltInStyleValue();
     cachedOLEDKeyboardEnabled = YTCDTOLEDKeyboardEnabled();
     cachedRemoveRoundedCornersEnabled = YTCDTRemoveRoundedCornersEnabled();
+    cachedDisablePullToFullEnabled = YTCDTDisablePullToFullEnabled();
+    cachedHidePreviewCommentSectionEnabled = YTCDTHidePreviewCommentSectionEnabled();
     customThemeColor = YTCDTCustomThemeColor();
 
     if (cachedRemoveRoundedCornersEnabled ||
+        cachedHidePreviewCommentSectionEnabled ||
         (cachedEnabled &&
          (cachedThemeType == YTCDTThemeTypeBuiltIn ||
           (cachedThemeType == YTCDTThemeTypeCustomColor && customThemeColor != nil)))) {
@@ -638,5 +697,9 @@ static inline BOOL isGonerinoListViewController(id object) {
 
     if (cachedOLEDKeyboardEnabled) {
         %init(gOLEDKeyboard);
+    }
+
+    if (cachedDisablePullToFullEnabled) {
+        %init(gWatchUIOptions);
     }
 }

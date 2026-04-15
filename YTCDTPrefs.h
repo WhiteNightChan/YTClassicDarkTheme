@@ -49,3 +49,9 @@ void YTCDTSetOLEDKeyboardEnabled(BOOL enabled);
 
 BOOL YTCDTRemoveRoundedCornersEnabled(void);
 void YTCDTSetRemoveRoundedCornersEnabled(BOOL enabled);
+
+BOOL YTCDTDisablePullToFullEnabled(void);
+void YTCDTSetDisablePullToFullEnabled(BOOL enabled);
+
+BOOL YTCDTHidePreviewCommentSectionEnabled(void);
+void YTCDTSetHidePreviewCommentSectionEnabled(BOOL enabled);

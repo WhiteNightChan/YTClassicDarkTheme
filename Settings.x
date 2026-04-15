@@ -558,6 +558,42 @@ static inline void YTCDTPresentHexColorAlert(YTSettingsViewController *delegate)
                                         settingItemId:0];
     [sectionItems addObject:keyboardItem];
 
+    SECTION_HEADER(YTCDTLocalizedText(@"SETTINGS_WATCH_UI_HEADER"));
+
+    YTSettingsSectionItem *disablePullToFullItem =
+        [%c(YTSettingsSectionItem) switchItemWithTitle:YTCDTLocalizedText(@"SETTINGS_DISABLE_PULL_TO_FULL_TITLE")
+                                      titleDescription:YTCDTLocalizedText(@"SETTINGS_DISABLE_PULL_TO_FULL_DESCRIPTION")
+                               accessibilityIdentifier:@"YTClassicDarkThemeDisablePullToFull"
+                                              switchOn:YTCDTDisablePullToFullEnabled()
+                                           switchBlock:^BOOL (YTSettingsCell *cell, BOOL enabled) {
+                                              YTCDTSetDisablePullToFullEnabled(enabled);
+
+                                              if ([delegate respondsToSelector:@selector(reloadData)]) {
+                                                  [delegate reloadData];
+                                              }
+
+                                              return YES;
+                                          }
+                                        settingItemId:0];
+    [sectionItems addObject:disablePullToFullItem];
+
+    YTSettingsSectionItem *hidePreviewCommentSectionItem =
+        [%c(YTSettingsSectionItem) switchItemWithTitle:YTCDTLocalizedText(@"SETTINGS_HIDE_COMMENT_PREVIEW_TITLE")
+                                      titleDescription:YTCDTLocalizedText(@"SETTINGS_HIDE_COMMENT_PREVIEW_DESCRIPTION")
+                               accessibilityIdentifier:@"YTClassicDarkThemeHideCommentPreview"
+                                              switchOn:YTCDTHidePreviewCommentSectionEnabled()
+                                           switchBlock:^BOOL (YTSettingsCell *cell, BOOL enabled) {
+                                              YTCDTSetHidePreviewCommentSectionEnabled(enabled);
+
+                                              if ([delegate respondsToSelector:@selector(reloadData)]) {
+                                                  [delegate reloadData];
+                                              }
+
+                                              return YES;
+                                          }
+                                        settingItemId:0];
+    [sectionItems addObject:hidePreviewCommentSectionItem];
+
     YTSettingsSectionItem *versionItem =
         [%c(YTSettingsSectionItem) itemWithTitle:YTCDTLocalizedText(@"SETTINGS_VERSION_TITLE")
                                 titleDescription:nil

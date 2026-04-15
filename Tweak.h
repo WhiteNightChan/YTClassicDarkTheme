@@ -37,6 +37,14 @@
 @interface YTChipCloudCell : UIView
 @end
 
+@interface YTWatchViewController : UIViewController
+- (unsigned long long)allowedFullScreenOrientations;
+@end
+
+@interface YTWatchPullToFullController : NSObject
+- (id)playerViewSource;
+@end
+
 @interface YTCommentView : UIView
 @end
 

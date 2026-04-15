@@ -12,6 +12,9 @@ static NSString * const kYTCDTCustomPresetIdentifierKey = @"classicDarkTheme_cus
 static NSString * const kYTCDTOLEDKeyboardKey = @"classicDarkTheme_oledKeyboard";
 static NSString * const kYTCDTRemoveRoundedCornersKey = @"classicDarkTheme_removeRoundedCorners";
 
+static NSString * const kYTCDTDisablePullToFullKey = @"classicDarkTheme_disablePullToFull";
+static NSString * const kYTCDTHidePreviewCommentSectionKey = @"classicDarkTheme_hidePreviewCommentSection";
+
 static inline NSUserDefaults *YTCDTDefaults(void) {
     return [NSUserDefaults standardUserDefaults];
 }
@@ -280,5 +283,23 @@ BOOL YTCDTRemoveRoundedCornersEnabled(void) {
 
 void YTCDTSetRemoveRoundedCornersEnabled(BOOL enabled) {
     [YTCDTDefaults() setBool:enabled forKey:kYTCDTRemoveRoundedCornersKey];
+    [YTCDTDefaults() synchronize];
+}
+
+BOOL YTCDTDisablePullToFullEnabled(void) {
+    return [YTCDTDefaults() boolForKey:kYTCDTDisablePullToFullKey];
+}
+
+void YTCDTSetDisablePullToFullEnabled(BOOL enabled) {
+    [YTCDTDefaults() setBool:enabled forKey:kYTCDTDisablePullToFullKey];
+    [YTCDTDefaults() synchronize];
+}
+
+BOOL YTCDTHidePreviewCommentSectionEnabled(void) {
+    return [YTCDTDefaults() boolForKey:kYTCDTHidePreviewCommentSectionKey];
+}
+
+void YTCDTSetHidePreviewCommentSectionEnabled(BOOL enabled) {
+    [YTCDTDefaults() setBool:enabled forKey:kYTCDTHidePreviewCommentSectionKey];
     [YTCDTDefaults() synchronize];
 }

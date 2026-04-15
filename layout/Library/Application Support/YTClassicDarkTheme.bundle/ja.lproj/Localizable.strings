@@ -63,6 +63,12 @@
 "SETTINGS_OLED_KEYBOARD_TITLE" = "OLEDキーボード";
 "SETTINGS_OLED_KEYBOARD_DESCRIPTION" = "OLED(有機EL)キーボードを有効にします";
 
+"SETTINGS_WATCH_UI_HEADER" = "視聴中画面のUI";
+"SETTINGS_DISABLE_PULL_TO_FULL_TITLE" = "全画面表示への引っ張りジェスチャーを無効化";
+"SETTINGS_DISABLE_PULL_TO_FULL_DESCRIPTION" = "横向き動画で、引っ張って全画面表示に入る挙動を無効化します。";
+"SETTINGS_HIDE_COMMENT_PREVIEW_TITLE" = "コメントプレビューを非表示";
+"SETTINGS_HIDE_COMMENT_PREVIEW_DESCRIPTION" = "動画プレーヤー下のコメントプレビューを非表示にします。";
+
 "SETTINGS_VERSION_TITLE" = "バージョン";
 
 "SETTINGS_SECTION_TITLE" = "Classic Dark Theme";
