@@ -12,7 +12,7 @@ jobs:
 
     steps:
       - name: Checkout Main
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           path: main
           submodules: recursive
@@ -21,13 +21,15 @@ jobs:
         run: brew install make ldid dpkg
 
       - name: Set PATH environment variable
-        run: echo "$(brew --prefix make)/libexec/gnubin" >> $GITHUB_PATH
+        run: |
+          echo "$(brew --prefix make)/libexec/gnubin" >> $GITHUB_PATH
+          echo "THEOS=${{ github.workspace }}/theos" >> $GITHUB_ENV
 
       - name: Cache Theos
         id: theos
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         env:
-          cache-name: theos_cache_67db2ab
+          cache-name: theos_cache_13c2237
         with:
           path: theos/
           key: ${{ env.cache-name }}
@@ -35,11 +37,11 @@ jobs:
 
       - name: Setup Theos
         if: ${{ steps.theos.outputs.cache-hit != 'true' }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: theos/theos
-          ref: 67db2ab8d950910161730de77c322658ea3e6b44
-          path: ${{ github.workspace }}/theos
+          ref: 13c22376b5d83ff759c1993de0a861e673aa522b
+          path: theos
           submodules: recursive
 
       - name: Download iOS SDK
@@ -50,33 +52,20 @@ jobs:
           git sparse-checkout set --no-cone iPhoneOS16.5.sdk
           git checkout
           mv *.sdk $THEOS/sdks
-        env:
-          THEOS: ${{ github.workspace }}/theos
 
       - name: Clone YouTubeHeader
         run: |
           if [ -d "$THEOS/include/YouTubeHeader" ]; then
-            echo "YouTubeHeader exists. Pulling latest changes..."
-            cd $THEOS/include/YouTubeHeader
-            git pull
+            cd $THEOS/include/YouTubeHeader && git pull
           else
-            echo "YouTubeHeader does not exist. Cloning repository..."
-            cd $THEOS/include
-            git clone --quiet --depth=1 https://github.com/PoomSmart/YouTubeHeader.git
+            cd $THEOS/include && git clone --quiet --depth=1 https://github.com/PoomSmart/YouTubeHeader.git
           fi
-
-          echo "Copying YouTubeHeader to YTHeaders..."
           rm -rf "$THEOS/include/YTHeaders"
           cp -r "$THEOS/include/YouTubeHeader" "$THEOS/include/YTHeaders"
-        env:
-          THEOS: ${{ github.workspace }}/theos
 
       - name: Build Package
         run: |
-          cd ${{ github.workspace }}/main
-          make package FINALPACKAGE=1
-        env:
-          THEOS: ${{ github.workspace }}/theos
+          cd main && make clean package DEBUG=0 FINALPACKAGE=1
 
       - name: Extract Values
         run: |
@@ -89,7 +78,7 @@ jobs:
           echo "ROOTLESS_DEB_FILE_NAME=$ROOTLESS_DEB_FILE_NAME" >> $GITHUB_ENV
 
       - name: Upload to GitHub Releases
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: v${{ env.VERSION }}
           files: |
